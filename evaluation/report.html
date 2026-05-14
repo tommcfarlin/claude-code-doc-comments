@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>doc-comments skill — evaluation report</title>
+<style>
+  :root {
+    --fg: #1a1a1a; --muted: #666; --bg: #fff; --border: #e5e5e5;
+    --accent: #2563eb; --good: #2ea043; --bad: #d4574e;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+         color: var(--fg); background: var(--bg); max-width: 880px;
+         margin: 40px auto; padding: 0 24px; line-height: 1.55; }
+  h1 { font-size: 28px; margin-bottom: 4px; }
+  h2 { font-size: 20px; margin-top: 36px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+  h3 { font-size: 16px; margin-top: 24px; }
+  .subtitle { color: var(--muted); margin-top: 0; }
+  .meta { font-size: 13px; color: var(--muted); margin: 16px 0; }
+  .meta code { background: #f4f4f4; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; margin: 12px 0; }
+  th, td { padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: left; }
+  th { background: #fafafa; font-weight: 600; }
+  td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .headline { display: flex; gap: 16px; margin: 24px 0; flex-wrap: wrap; }
+  .stat { flex: 1; min-width: 200px; padding: 16px; border: 1px solid var(--border);
+          border-radius: 6px; background: #fafafa; }
+  .stat .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat .value { font-size: 24px; font-weight: 600; margin: 4px 0; }
+  .stat .sub { font-size: 12px; color: var(--muted); }
+  .delta-down { color: var(--good); }
+  .delta-up { color: var(--bad); }
+  .demo { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 11px; }
+  .demo pre { background: #fafafa; padding: 10px; border-radius: 4px; overflow: auto;
+              max-height: 360px; border: 1px solid var(--border); margin: 0; }
+  .demo h4 { margin: 0 0 6px 0; font-size: 12px; }
+  .caveats { background: #fff8e6; border-left: 3px solid #d4a017; padding: 12px 16px; border-radius: 0 4px 4px 0; }
+  .arm-color-a { color: #d4574e; }
+  .arm-color-b { color: #3a7bd5; }
+  .arm-color-c { color: #2ea043; }
+  svg { display: block; margin: 8px 0; }
+  code, pre { font-family: "SF Mono", Menlo, monospace; }
+</style>
+</head>
+<body>
+
+<h1>doc-comments skill — evaluation report</h1>
+<p class="subtitle">Does an agent measurably need fewer tokens to understand a codebase that has structured doc comments?</p>
+
+<div class="meta">
+  Fixture: <code>tommcfarlin/where-can-i-watch-ios</code> @ <code>8cd0d54</code> ·
+  Model: <code>claude-opus-4-7</code> ·
+  N = 5 runs per arm ·
+  Prompt SHA-256: <code>a8208e04692fbadd…</code>
+</div>
+
+
+
+<h2>Headline</h2>
+<div class="headline">
+  <div class="stat">
+    <div class="label">Skill vs. no docs</div>
+    <div class="value delta-up">+14.7%</div>
+    <div class="sub">median input tokens to first edit, Arm B vs. Arm A</div>
+  </div>
+  <div class="stat">
+    <div class="label">Human docs vs. no docs</div>
+    <div class="value delta-up">+19.5%</div>
+    <div class="sub">median input tokens to first edit, Arm C vs. Arm A</div>
+  </div>
+  <div class="stat">
+    <div class="label">Skill vs. human</div>
+    <div class="value">-4.0%</div>
+    <div class="sub">median input tokens to first edit, Arm B vs. Arm C</div>
+  </div>
+</div>
+
+<h2>Methodology</h2>
+<p>Three checkouts of the same Swift codebase, identical except for doc-comment state:</p>
+<ul>
+  <li><span class="arm-color-a"><strong>Arm A — stripped:</strong></span> all <code>///</code> and <code>/** */</code> doc comments removed. 570 doc lines deleted across 52 files. Pure deletions; no code, formatting, or whitespace modified.</li>
+  <li><span class="arm-color-b"><strong>Arm B — skill-generated:</strong></span> Arm A's stripped baseline, then one full pass of the <code>doc-comments</code> skill. Generated 681 doc lines across 54 files.</li>
+  <li><span class="arm-color-c"><strong>Arm C — human-written (original):</strong></span> pristine <code>origin/main</code>. Hand-written doc comments by the codebase author.</li>
+</ul>
+<p>Each arm received the identical task prompt below in 3 fresh, non-interactive <code>claude -p</code> sessions
+(stream-json output, <code>--permission-mode bypassPermissions</code>, fresh process per run, working tree
+reset between runs). 9 runs total. Same model, same prompt, no shared context.</p>
+
+<h3>Task prompt (locked)</h3>
+<pre style="background:#fafafa;padding:12px;border-left:3px solid var(--accent);font-size:12px;white-space:pre-wrap;">Add a method to WatchlistManager called markAllEpisodesOfSeasonWatched(mediaId:seasonNumber:episodes:context:) that marks every episode in a given season as watched. After marking, it should trigger the appropriate notification rescheduling so that any pending notifications for those episodes are cancelled or updated. Follow the existing conventions for ModelContext handling, episode persistence, and notification side effects.</pre>
+
+<h3>Metric: input tokens before first edit</h3>
+<p>"First edit" is defined as the first Claude tool call to <code>Edit</code>, <code>Write</code>, <code>MultiEdit</code>,
+or <code>NotebookEdit</code>. All input tokens (including cache reads and cache creation) consumed up to and
+including that turn are summed. This isolates discovery cost — the work the agent does <em>before</em> it knows
+enough to start acting.</p>
+
+<h2>Results</h2>
+
+<h3>Input tokens to first edit</h3>
+<svg viewBox="0 0 520 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Input tokens consumed before first edit"><text x="260.0" y="22" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="14" font-weight="600">Input tokens consumed before first edit</text><line x1="50" y1="190.0" x2="470" y2="190.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="194.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">0</text><line x1="50" y1="155.0" x2="470" y2="155.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="159.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">170,414</text><line x1="50" y1="120.0" x2="470" y2="120.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="124.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">340,828</text><line x1="50" y1="85.0" x2="470" y2="85.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="89.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">511,242</text><line x1="50" y1="50.0" x2="470" y2="50.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="54.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">681,657</text><rect x="67.5" y="98.9" width="33.0" height="91.1" fill="#d4574e" opacity="0.85"/><rect x="102.5" y="127.1" width="33.0" height="62.9" fill="#d4574e" opacity="0.85"/><rect x="137.5" y="71.4" width="33.0" height="118.6" fill="#d4574e" opacity="0.85"/><rect x="172.5" y="116.9" width="33.0" height="73.1" fill="#d4574e" opacity="0.85"/><rect x="207.5" y="122.3" width="33.0" height="67.7" fill="#d4574e" opacity="0.85"/><line x1="63.5" y1="116.9" x2="176.5" y2="116.9" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="178.5" y="120.9" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 355,942</text><text x="120.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm A</text><rect x="207.5" y="50.0" width="33.0" height="140.0" fill="#3a7bd5" opacity="0.85"/><rect x="242.5" y="95.6" width="33.0" height="94.4" fill="#3a7bd5" opacity="0.85"/><rect x="277.5" y="106.1" width="33.0" height="83.9" fill="#3a7bd5" opacity="0.85"/><rect x="312.5" y="150.4" width="33.0" height="39.6" fill="#3a7bd5" opacity="0.85"/><rect x="347.5" y="109.0" width="33.0" height="81.0" fill="#3a7bd5" opacity="0.85"/><line x1="203.5" y1="106.1" x2="316.5" y2="106.1" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="318.5" y="110.1" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 408,297</text><text x="260.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm B</text><rect x="347.5" y="102.6" width="33.0" height="87.4" fill="#2ea043" opacity="0.85"/><rect x="382.5" y="96.6" width="33.0" height="93.4" fill="#2ea043" opacity="0.85"/><rect x="417.5" y="97.2" width="33.0" height="92.8" fill="#2ea043" opacity="0.85"/><rect x="452.5" y="125.7" width="33.0" height="64.3" fill="#2ea043" opacity="0.85"/><rect x="487.5" y="125.6" width="33.0" height="64.4" fill="#2ea043" opacity="0.85"/><line x1="343.5" y1="102.6" x2="456.5" y2="102.6" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="458.5" y="106.6" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 425,455</text><text x="400.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm C</text><text x="10" y="120.0" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#666" transform="rotate(-90 10,120.0)">tokens</text></svg>
+<p class="meta">Dashed line = median per arm. Each bar = one run.</p>
+
+<h3>Discovery tool calls (Read / Grep / Glob / Bash) before first edit</h3>
+<svg viewBox="0 0 520 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Discovery tool calls (Read/Grep/Glob/Bash) before first edit"><text x="260.0" y="22" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="14" font-weight="600">Discovery tool calls (Read/Grep/Glob/Bash) before first edit</text><line x1="50" y1="190.0" x2="470" y2="190.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="194.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">0</text><line x1="50" y1="155.0" x2="470" y2="155.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="159.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">2</text><line x1="50" y1="120.0" x2="470" y2="120.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="124.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">5</text><line x1="50" y1="85.0" x2="470" y2="85.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="89.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">7</text><line x1="50" y1="50.0" x2="470" y2="50.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="54.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">10</text><rect x="67.5" y="92.0" width="33.0" height="98.0" fill="#d4574e" opacity="0.85"/><rect x="102.5" y="134.0" width="33.0" height="56.0" fill="#d4574e" opacity="0.85"/><rect x="137.5" y="64.0" width="33.0" height="126.0" fill="#d4574e" opacity="0.85"/><rect x="172.5" y="120.0" width="33.0" height="70.0" fill="#d4574e" opacity="0.85"/><rect x="207.5" y="120.0" width="33.0" height="70.0" fill="#d4574e" opacity="0.85"/><line x1="63.5" y1="120.0" x2="176.5" y2="120.0" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="178.5" y="124.0" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 5</text><text x="120.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm A</text><rect x="207.5" y="50.0" width="33.0" height="140.0" fill="#3a7bd5" opacity="0.85"/><rect x="242.5" y="92.0" width="33.0" height="98.0" fill="#3a7bd5" opacity="0.85"/><rect x="277.5" y="120.0" width="33.0" height="70.0" fill="#3a7bd5" opacity="0.85"/><rect x="312.5" y="162.0" width="33.0" height="28.0" fill="#3a7bd5" opacity="0.85"/><rect x="347.5" y="120.0" width="33.0" height="70.0" fill="#3a7bd5" opacity="0.85"/><line x1="203.5" y1="120.0" x2="316.5" y2="120.0" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="318.5" y="124.0" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 5</text><text x="260.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm B</text><rect x="347.5" y="106.0" width="33.0" height="84.0" fill="#2ea043" opacity="0.85"/><rect x="382.5" y="106.0" width="33.0" height="84.0" fill="#2ea043" opacity="0.85"/><rect x="417.5" y="106.0" width="33.0" height="84.0" fill="#2ea043" opacity="0.85"/><rect x="452.5" y="120.0" width="33.0" height="70.0" fill="#2ea043" opacity="0.85"/><rect x="487.5" y="134.0" width="33.0" height="56.0" fill="#2ea043" opacity="0.85"/><line x1="343.5" y1="106.0" x2="456.5" y2="106.0" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="458.5" y="110.0" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 6</text><text x="400.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm C</text><text x="10" y="120.0" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#666" transform="rotate(-90 10,120.0)">calls</text></svg>
+
+<h3>Wall-clock time per run</h3>
+<svg viewBox="0 0 520 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Wall-clock time per run"><text x="260.0" y="22" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="14" font-weight="600">Wall-clock time per run</text><line x1="50" y1="190.0" x2="470" y2="190.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="194.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">0</text><line x1="50" y1="155.0" x2="470" y2="155.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="159.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">19</text><line x1="50" y1="120.0" x2="470" y2="120.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="124.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">39</text><line x1="50" y1="85.0" x2="470" y2="85.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="89.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">59</text><line x1="50" y1="50.0" x2="470" y2="50.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="54.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">79</text><rect x="67.5" y="101.4" width="33.0" height="88.6" fill="#d4574e" opacity="0.85"/><rect x="102.5" y="99.6" width="33.0" height="90.4" fill="#d4574e" opacity="0.85"/><rect x="137.5" y="58.9" width="33.0" height="131.1" fill="#d4574e" opacity="0.85"/><rect x="172.5" y="94.3" width="33.0" height="95.7" fill="#d4574e" opacity="0.85"/><rect x="207.5" y="106.7" width="33.0" height="83.3" fill="#d4574e" opacity="0.85"/><line x1="63.5" y1="99.6" x2="176.5" y2="99.6" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="178.5" y="103.6" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 51</text><text x="120.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm A</text><rect x="207.5" y="50.0" width="33.0" height="140.0" fill="#3a7bd5" opacity="0.85"/><rect x="242.5" y="65.9" width="33.0" height="124.1" fill="#3a7bd5" opacity="0.85"/><rect x="277.5" y="76.6" width="33.0" height="113.4" fill="#3a7bd5" opacity="0.85"/><rect x="312.5" y="113.8" width="33.0" height="76.2" fill="#3a7bd5" opacity="0.85"/><rect x="347.5" y="87.2" width="33.0" height="102.8" fill="#3a7bd5" opacity="0.85"/><line x1="203.5" y1="76.6" x2="316.5" y2="76.6" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="318.5" y="80.6" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 64</text><text x="260.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm B</text><rect x="347.5" y="103.2" width="33.0" height="86.8" fill="#2ea043" opacity="0.85"/><rect x="382.5" y="76.6" width="33.0" height="113.4" fill="#2ea043" opacity="0.85"/><rect x="417.5" y="85.4" width="33.0" height="104.6" fill="#2ea043" opacity="0.85"/><rect x="452.5" y="85.4" width="33.0" height="104.6" fill="#2ea043" opacity="0.85"/><rect x="487.5" y="78.4" width="33.0" height="111.6" fill="#2ea043" opacity="0.85"/><line x1="343.5" y1="85.4" x2="456.5" y2="85.4" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="458.5" y="89.4" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 59</text><text x="400.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm C</text><text x="10" y="120.0" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#666" transform="rotate(-90 10,120.0)">seconds</text></svg>
+
+<h2>Per-run detail</h2>
+
+<h3 class="arm-color-a">Arm A — stripped (no docs)</h3>
+<table>
+  <thead><tr>
+    <th>Run</th><th class="num">Input total</th><th class="num">Input to first edit</th>
+    <th class="num">Output total</th><th class="num">Disc. calls pre-edit</th>
+    <th class="num">Turns</th><th class="num">Duration</th><th>Edited?</th>
+  </tr></thead>
+  <tbody>
+              <tr>
+                <td>1</td>
+                <td class="num">482,770</td>
+                <td class="num">443,624</td>
+                <td class="num">680</td>
+                <td class="num">7</td>
+                <td class="num">14</td>
+                <td class="num">50s</td>
+                <td>Yes</td>
+              </tr>
+
+              <tr>
+                <td>2</td>
+                <td class="num">347,674</td>
+                <td class="num">306,440</td>
+                <td class="num">372</td>
+                <td class="num">4</td>
+                <td class="num">10</td>
+                <td class="num">51s</td>
+                <td>Yes</td>
+              </tr>
+
+              <tr>
+                <td>3</td>
+                <td class="num">620,457</td>
+                <td class="num">577,278</td>
+                <td class="num">762</td>
+                <td class="num">9</td>
+                <td class="num">17</td>
+                <td class="num">74s</td>
+                <td>Yes</td>
+              </tr>
+
+              <tr>
+                <td>4</td>
+                <td class="num">399,207</td>
+                <td class="num">355,942</td>
+                <td class="num">462</td>
+                <td class="num">5</td>
+                <td class="num">11</td>
+                <td class="num">54s</td>
+                <td>Yes</td>
+              </tr>
+
+              <tr>
+                <td>5</td>
+                <td class="num">367,684</td>
+                <td class="num">329,664</td>
+                <td class="num">463</td>
+                <td class="num">5</td>
+                <td class="num">11</td>
+                <td class="num">47s</td>
+                <td>Yes</td>
+              </tr></tbody>
+</table>
+
+<h3 class="arm-color-b">Arm B — skill-generated</h3>
+<table>
+  <thead><tr>
+    <th>Run</th><th class="num">Input total</th><th class="num">Input to first edit</th>
+    <th class="num">Output total</th><th class="num">Disc. calls pre-edit</th>
+    <th class="num">Turns</th><th class="num">Duration</th><th>Edited?</th>
+  </tr></thead>
+  <tbody>
+              <tr>
+                <td>1</td>
+                <td class="num">732,724</td>
+                <td class="num">681,657</td>
+                <td class="num">785</td>
+                <td class="num">10</td>
+                <td class="num">18</td>
+                <td class="num">79s</td>
+                <td>Yes</td>
+              </tr>
+
+              <tr>
+                <td>2</td>
+                <td class="num">501,788</td>
+                <td class="num">459,721</td>
+                <td class="num">686</td>
+                <td class="num">7</td>
+                <td class="num">14</td>
+                <td class="num">70s</td>
+                <td>Yes</td>
+              </tr>
+
+              <tr>
+                <td>3</td>
+                <td class="num">453,519</td>
+                <td class="num">408,297</td>
+                <td class="num">423</td>
+                <td class="num">5</td>
+                <td class="num">12</td>
+                <td class="num">64s</td>
+                <td>Yes</td>
+              </tr>
+
+              <tr>
+                <td>4</td>
+                <td class="num">230,737</td>
+                <td class="num">192,625</td>
+                <td class="num">213</td>
+                <td class="num">2</td>
+                <td class="num">7</td>
+                <td class="num">43s</td>
+                <td>Yes</td>
+              </tr>
+
+              <tr>
+                <td>5</td>
+                <td class="num">437,017</td>
+                <td class="num">394,630</td>
+                <td class="num">483</td>
+                <td class="num">5</td>
+                <td class="num">12</td>
+                <td class="num">58s</td>
+                <td>Yes</td>
+              </tr></tbody>
+</table>
+
+<h3 class="arm-color-c">Arm C — human-written (original)</h3>
+<table>
+  <thead><tr>
+    <th>Run</th><th class="num">Input total</th><th class="num">Input to first edit</th>
+    <th class="num">Output total</th><th class="num">Disc. calls pre-edit</th>
+    <th class="num">Turns</th><th class="num">Duration</th><th>Edited?</th>
+  </tr></thead>
+  <tbody>
+              <tr>
+                <td>1</td>
+                <td class="num">467,075</td>
+                <td class="num">425,455</td>
+                <td class="num">519</td>
+                <td class="num">6</td>
+                <td class="num">13</td>
+                <td class="num">49s</td>
+                <td>Yes</td>
+              </tr>
+
+              <tr>
+                <td>2</td>
+                <td class="num">500,751</td>
+                <td class="num">454,524</td>
+                <td class="num">558</td>
+                <td class="num">6</td>
+                <td class="num">13</td>
+                <td class="num">64s</td>
+                <td>Yes</td>
+              </tr>
+
+              <tr>
+                <td>3</td>
+                <td class="num">497,859</td>
+                <td class="num">451,981</td>
+                <td class="num">547</td>
+                <td class="num">6</td>
+                <td class="num">13</td>
+                <td class="num">59s</td>
+                <td>Yes</td>
+              </tr>
+
+              <tr>
+                <td>4</td>
+                <td class="num">355,847</td>
+                <td class="num">312,873</td>
+                <td class="num">371</td>
+                <td class="num">5</td>
+                <td class="num">10</td>
+                <td class="num">59s</td>
+                <td>Yes</td>
+              </tr>
+
+              <tr>
+                <td>5</td>
+                <td class="num">358,432</td>
+                <td class="num">313,684</td>
+                <td class="num">370</td>
+                <td class="num">4</td>
+                <td class="num">10</td>
+                <td class="num">63s</td>
+                <td>Yes</td>
+              </tr></tbody>
+</table>
+
+<h2>Demo: one file, three states</h2>
+<p>The same file under all three arms. The agent sees one of these depending on the arm; the code is identical.</p>
+
+<p class="meta">File: <code>WCIWKit/Models/Media.swift</code></p>
+<div class="demo">
+  <div>
+    <h4 class="arm-color-a">Arm A — stripped</h4>
+    <pre>import Foundation
+
+public struct Media: Identifiable, Sendable, Codable {
+    public let id: Int
+
+    public let title: String
+
+    public let overview: String
+
+    public let mediaType: MediaType
+
+    public let posterPath: String?
+
+    public let backdropPath: String?
+
+    public let releaseDate: String?
+
+    public let voteAverage: Double
+
+    public let voteCount: Int
+
+    public init(
+        id: Int,
+        title: String,
+        overview: String,
+        mediaType: MediaType,
+        posterPath: String?,
+        backdropPath: String?,
+        releaseDate: String?,
+        voteAverage: Double,
+        voteCount: Int
+    ) {
+        self.id = id
+        self.title = title
+        self.overview = overview
+        self.mediaType = mediaType
+        self.posterPath = posterPath
+        self.backdropPath = backdropPath
+        self.releaseDate = releaseDate
+        self.voteAverage = voteAverage
+        self.voteCount = voteCount
+    }
+}
+
+// MARK: - Computed Properties
+
+extension Media {
+    public var posterURL: URL? {
+        guard let posterPath else { return nil }
+        return URL(string: &quot;https://image.tmdb.org/t/p/w500\(posterPath)&quot;)
+    }
+
+    public var backdropURL: URL? {
+        guard let backdropPath else { return nil }
+        return URL(string: &quot;https://image.tmdb.org/t/p/w780\(backdropPath)&quot;)
+    }
+
+    public var year: String? {
+        guard let releaseDate, releaseDate.count &gt;= 4 else { return nil }
+        return String(releaseDate.prefix(4))
+    }
+
+    public var formattedRating: String {
+        String(format: &quot;%.1f&quot;, voteAverage)
+    }
+}
+
+// MARK: - Equatable &amp; Hashable
+
+extension Media: Equatable, Hashable {
+    public static func == (lhs: Media, rhs: Media) -&gt; Bool {
+        lhs.id == rhs.id &amp;&amp; lhs.mediaType == rhs.mediaType
+    }
+
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+        hasher.combine(mediaType)
+    }
+}
+</pre>
+  </div>
+  <div>
+    <h4 class="arm-color-b">Arm B — skill</h4>
+    <pre>import Foundation
+
+/// A movie or TV show as represented by TMDB. The primary domain model for search results,
+/// trending lists, watchlist entries, and detail screens.
+///
+/// Identity is `(id, mediaType)` — TMDB IDs are not unique across movies and TV shows, so
+/// equality and hashing combine both fields.
+public struct Media: Identifiable, Sendable, Codable {
+    /// TMDB identifier. Not globally unique — pair with `mediaType` for cross-type identity.
+    public let id: Int
+
+    /// Display title for movies, or show name for TV. Normalized at decode time.
+    public let title: String
+
+    /// TMDB-provided plot synopsis. May be an empty string if TMDB has no overview.
+    public let overview: String
+
+    /// Whether this item is a movie or a TV show. Required for routing detail fetches.
+    public let mediaType: MediaType
+
+    /// Relative TMDB poster path (e.g. `/abc.jpg`). `nil` when TMDB has no poster.
+    /// Combine with the TMDB image base URL via `posterURL` to get a fetchable URL.
+    public let posterPath: String?
+
+    /// Relative TMDB backdrop path. `nil` when TMDB has no backdrop. Use `backdropURL` for the full URL.
+    public let backdropPath: String?
+
+    /// Release or first-air date in `YYYY-MM-DD` format from TMDB. `nil` when unknown or unreleased.
+    public let releaseDate: String?
+
+    /// TMDB average user vote on a 0–10 scale. May be 0 when a title has no votes.
+    public let voteAverage: Double
+
+    /// Number of TMDB user votes contributing to `voteAverage`. Use as a confidence signal for the rating.
+    public let voteCount: Int
+
+    public init(
+        id: Int,
+        title: String,
+        overview: String,
+        mediaType: MediaType,
+        posterPath: String?,
+        backdropPath: String?,
+        releaseDate: String?,
+        voteAverage: Double,
+        voteCount: Int
+    ) {
+        self.id = id
+        self.title = title
+        self.overview = overview
+        self.mediaType = mediaType
+        self.posterPath = posterPath
+        self.backdropPath = backdropPath
+        self.releaseDate = releaseDate
+        self.voteAverage = voteAverage
+        self.voteCount = voteCount
+    }
+}
+
+// MARK: - Computed Properties
+
+extension Media {
+    /// Fully qualified TMDB poster URL at `w500` width, or `nil` when `posterPath` is missing.
+    public var posterURL: URL? {
+        guard let posterPath else { return nil }
+       </pre>
+  </div>
+  <div>
+    <h4 class="arm-color-c">Arm C — human</h4>
+    <pre>import Foundation
+
+/// A movie or TV show from TMDB.
+public struct Media: Identifiable, Sendable, Codable {
+    /// Unique TMDB identifier.
+    public let id: Int
+
+    /// Title of the media (movie title or TV show name).
+    public let title: String
+
+    /// Brief description of the media.
+    public let overview: String
+
+    /// Type of media (movie or TV).
+    public let mediaType: MediaType
+
+    /// Path to the poster image (relative to TMDB image base URL).
+    public let posterPath: String?
+
+    /// Path to the backdrop image (relative to TMDB image base URL).
+    public let backdropPath: String?
+
+    /// Release date for movies, first air date for TV shows.
+    public let releaseDate: String?
+
+    /// Average vote score (0-10).
+    public let voteAverage: Double
+
+    /// Number of votes.
+    public let voteCount: Int
+
+    /// Creates a new Media instance.
+    public init(
+        id: Int,
+        title: String,
+        overview: String,
+        mediaType: MediaType,
+        posterPath: String?,
+        backdropPath: String?,
+        releaseDate: String?,
+        voteAverage: Double,
+        voteCount: Int
+    ) {
+        self.id = id
+        self.title = title
+        self.overview = overview
+        self.mediaType = mediaType
+        self.posterPath = posterPath
+        self.backdropPath = backdropPath
+        self.releaseDate = releaseDate
+        self.voteAverage = voteAverage
+        self.voteCount = voteCount
+    }
+}
+
+// MARK: - Computed Properties
+
+extension Media {
+    /// Full URL for the poster image at w500 size.
+    public var posterURL: URL? {
+        guard let posterPath else { return nil }
+        return URL(string: &quot;https://image.tmdb.org/t/p/w500\(posterPath)&quot;)
+    }
+
+    /// Full URL for the backdrop image at w780 size.
+    public var backdropURL: URL? {
+        guard let backdropPath else { return nil }
+        return URL(string: &quot;https://image.tmdb.org/t/p/w780\(backdropPath)&quot;)
+    }
+
+    /// Year extracted from release date.
+    public var year: String? {
+        guard let releaseDate, releaseDate.count &gt;= 4 else { return nil }
+        return String(releaseDate.prefix(4))
+    }
+
+    /// Formatted vote average (e.g., &quot;7.5&quot;).
+    public var formattedRating: String {
+        String(format: &quot;%.1f&quot;, voteAverage)
+    }
+}
+
+// MARK: - Equatable &amp; Hashable
+
+extension Media: Equatable, Hashable {
+    public static func == (lhs: Media, rhs: M</pre>
+  </div>
+</div>
+
+<h2>Honest caveats</h2>
+<div class="caveats">
+  <ul>
+    <li><strong>N = 3 per arm.</strong> 9 runs total. This is directional, not statistically significant. Variance within an arm is real and visible in the per-run tables.</li>
+    <li><strong>One fixture, one task, one language.</strong> Results characterize <em>this</em> codebase and <em>this</em> task. They do not generalize without additional fixtures.</li>
+    <li><strong>"First edit" is a proxy.</strong> It approximates the moment an agent has enough context to act. It does not capture quality of the resulting edit or downstream rework.</li>
+    <li><strong>Same model for all arms.</strong> Opus 4.7. A weaker model would likely show larger deltas; a stronger model would show smaller ones.</li>
+    <li><strong>The skill's own output is being measured against itself's premise.</strong> The skill was authored with this exact hypothesis in mind. The experiment falsifies or supports the premise; it does not prove the skill is optimal at producing the docs it produces.</li>
+  </ul>
+</div>
+
+<h2>Reproduction</h2>
+<p>This experiment is reproducible from any fork of the fixture repo. The harness, strip script, and parse/report
+scripts are committed to the doc-comments skill repo at
+<code>experiments/where-can-i-watch-ios/</code>. To re-run:</p>
+<pre style="background:#fafafa;padding:12px;font-size:12px;">git clone https://github.com/tommcfarlin/where-can-i-watch-ios.git
+cd where-can-i-watch-ios
+# Set up three worktrees per arm, apply strip script to Arm A & B,
+# run /doc-comments on Arm B, then:
+./run-experiment.sh
+python3 parse-runs.py
+python3 build-report.py</pre>
+
+<p class="meta" style="margin-top:48px;border-top:1px solid var(--border);padding-top:12px;">
+Generated by <code>build-report.py</code>. Self-contained HTML; no external resources.
+</p>
+
+</body>
+</html>
