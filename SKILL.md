@@ -64,7 +64,7 @@ Glob all files recursively from the project root. Apply exclusions. If `--only <
 For each file in the working set:
 
 1. Detect the language from the file extension. Refer to `references/formats.md` for supported languages. Skip files with unsupported extensions silently.
-2. Scan for documentable symbols: functions, methods, classes, structs, enums, interfaces, and public properties.
+2. Scan for documentable symbols: functions, methods, classes, structs, enums, interfaces, and public properties with non-obvious meaning.
 3. For each symbol, determine its state:
    - **Missing:** no doc comment present
    - **Stale:** doc comment exists but does not match the current signature, parameters, return type, or behavior

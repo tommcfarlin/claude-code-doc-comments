@@ -1,18 +1,18 @@
 # Doc Comments
 
-Generate and refresh structured doc comments across a codebase in one command. Built for agentic workflows — produces comments that reduce LLM discovery cost, with human readability as a byproduct.
+Help your codebase help your agent. Doc comments compress a function's contract into a few lines so an agent doesn't have to re-derive it from the implementation every time it reads the file.
 
-> **Note:** This skill is experimental and actively being evaluated in real-world workflows. It works, but expect rough edges and changes as it matures. See [EVALUATION.md](EVALUATION.md) for the testing methodology.
+> **Safe by default.** This skill writes only inside doc comment blocks — it never modifies code logic, formatting, or whitespace. Comments already current are left alone; only missing or stale ones are touched.
+
+Measured against paired agent sessions — methodology in [EVALUATION.md](EVALUATION.md).
 
 ## Why
 
-Every time an agent works in your codebase, it reads function signatures and implementations to infer intent. It burns tokens on discovery work that could be resolved instantly from a well-formed doc comment.
-
 The traditional argument for documentation is human readability. That's still true. But in agentic workflows there's a second, more immediate argument: a structured doc comment is a compressed, reliable signal that lets an agent understand a function's contract — what it takes, what it returns, what it touches — without reading the implementation.
 
-The cost of missing or stale documentation is no longer just a developer experience problem. It's a token budget problem. An agent that has to infer what a function does from 50 lines of code is slower and more error-prone than one that reads a 6-line doc comment stating the contract directly.
+An agent that has to infer what a function does from 50 lines of code is slower and more error-prone than one that reads a 6-line doc comment stating the contract directly. This skill generates comments with that priority in mind. Human readability is a byproduct, not the goal.
 
-This skill generates doc comments with that priority in mind. Human readability is a byproduct, not the goal.
+**And stale is worse than missing.** A missing comment forces the agent to read the implementation, which is always correct. A stale comment gives the agent false confidence — it acts on wrong information without knowing it's wrong. That's why this skill isn't a one-shot generator. It re-runs, detects drift per symbol, and refreshes comments that no longer match the code.
 
 ## How It Works
 
@@ -51,6 +51,15 @@ Combine flags:
 ```
 /doc-comments --changed --only php
 ```
+
+## When to Skip This Skill
+
+Mature tools say no. Skip this skill if:
+
+- Your codebase is small enough that an agent reads the whole thing in one pass anyway (~under 2k LOC).
+- You don't run agents against this codebase regularly — the payoff is in repeated sessions, not one-off reads.
+- Your team has strict house-style doc conventions this skill doesn't match. The output follows standard per-language formats (DocBlock, JSDoc, Swift Documentation Comments), not bespoke style guides.
+- The language isn't yet supported. See **Supported Languages** below.
 
 ## What Gets Documented
 
@@ -104,6 +113,8 @@ The default sweep classifies and refreshes stale comments automatically. Run `/d
 
 - A supported language codebase (PHP, Swift, JS, TS)
 - `--changed` flag requires a git repository
+
+> **Status:** Experimental. The skill works, but it's actively being evaluated in real-world workflows — expect rough edges and changes as it matures.
 
 ## Installation
 
