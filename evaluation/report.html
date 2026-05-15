@@ -2,18 +2,19 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>doc-comments skill — evaluation report</title>
+<title>doc-comments skill — evaluation report (dual-model)</title>
 <style>
   :root {
     --fg: #1a1a1a; --muted: #666; --bg: #fff; --border: #e5e5e5;
     --accent: #2563eb; --good: #2ea043; --bad: #d4574e;
   }
   body { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-         color: var(--fg); background: var(--bg); max-width: 880px;
+         color: var(--fg); background: var(--bg); max-width: 900px;
          margin: 40px auto; padding: 0 24px; line-height: 1.55; }
   h1 { font-size: 28px; margin-bottom: 4px; }
   h2 { font-size: 20px; margin-top: 36px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
   h3 { font-size: 16px; margin-top: 24px; }
+  h4 { font-size: 14px; margin-top: 16px; }
   .subtitle { color: var(--muted); margin-top: 0; }
   .meta { font-size: 13px; color: var(--muted); margin: 16px 0; }
   .meta code { background: #f4f4f4; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
@@ -21,19 +22,16 @@
   th, td { padding: 6px 10px; border-bottom: 1px solid var(--border); text-align: left; }
   th { background: #fafafa; font-weight: 600; }
   td.num { text-align: right; font-variant-numeric: tabular-nums; }
-  .headline { display: flex; gap: 16px; margin: 24px 0; flex-wrap: wrap; }
-  .stat { flex: 1; min-width: 200px; padding: 16px; border: 1px solid var(--border);
-          border-radius: 6px; background: #fafafa; }
-  .stat .label { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-  .stat .value { font-size: 24px; font-weight: 600; margin: 4px 0; }
-  .stat .sub { font-size: 12px; color: var(--muted); }
-  .delta-down { color: var(--good); }
-  .delta-up { color: var(--bad); }
+  .headline-table { font-size: 14px; }
+  .delta-down { color: var(--good); font-weight: 600; }
+  .delta-up { color: var(--bad); font-weight: 600; }
   .demo { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; font-size: 11px; }
   .demo pre { background: #fafafa; padding: 10px; border-radius: 4px; overflow: auto;
-              max-height: 360px; border: 1px solid var(--border); margin: 0; }
+              max-height: 380px; border: 1px solid var(--border); margin: 0; }
   .demo h4 { margin: 0 0 6px 0; font-size: 12px; }
   .caveats { background: #fff8e6; border-left: 3px solid #d4a017; padding: 12px 16px; border-radius: 0 4px 4px 0; }
+  .key-finding { background: #f0f7ff; border-left: 3px solid var(--accent); padding: 14px 18px;
+                  border-radius: 0 4px 4px 0; margin: 20px 0; }
   .arm-color-a { color: #d4574e; }
   .arm-color-b { color: #3a7bd5; }
   .arm-color-c { color: #2ea043; }
@@ -44,78 +42,111 @@
 <body>
 
 <h1>doc-comments skill — evaluation report</h1>
-<p class="subtitle">Does an agent measurably need fewer tokens to understand a codebase that has structured doc comments?</p>
+<p class="subtitle">A controlled test of the skill's premise across two model tiers.</p>
 
 <div class="meta">
   Fixture: <code>tommcfarlin/where-can-i-watch-ios</code> @ <code>8cd0d54</code> ·
-  Model: <code>claude-opus-4-7</code> ·
-  N = 5 runs per arm ·
+  Models: <code>claude-opus-4-7</code>, <code>claude-sonnet-4-6</code> ·
+  Opus 4.7: N=10 · Sonnet 4.6: N=10 ·
   Prompt SHA-256: <code>a8208e04692fbadd…</code>
 </div>
 
-
-
-<h2>Headline</h2>
-<div class="headline">
-  <div class="stat">
-    <div class="label">Skill vs. no docs</div>
-    <div class="value delta-up">+14.7%</div>
-    <div class="sub">median input tokens to first edit, Arm B vs. Arm A</div>
-  </div>
-  <div class="stat">
-    <div class="label">Human docs vs. no docs</div>
-    <div class="value delta-up">+19.5%</div>
-    <div class="sub">median input tokens to first edit, Arm C vs. Arm A</div>
-  </div>
-  <div class="stat">
-    <div class="label">Skill vs. human</div>
-    <div class="value">-4.0%</div>
-    <div class="sub">median input tokens to first edit, Arm B vs. Arm C</div>
-  </div>
+<div class="key-finding">
+  <strong>Headline.</strong> The skill's premise — that doc comments reduce agent discovery cost — is more specific than originally claimed. Human-written doc comments <em>do</em> reduce Sonnet's discovery cost meaningfully. The skill's generated doc comments <em>do not</em> — they make Sonnet do more work, not less. On Opus, doc comments of either kind add cost without changing behavior. <strong>The skill should not be used.</strong>
+  <br><br>
+  Full pre-registration of the Sonnet hypothesis (committed before Sonnet runs) is at
+  <a href="preregistration-sonnet.md"><code>preregistration-sonnet.md</code></a>.
 </div>
+
+<h2>Headline: median input tokens to first edit</h2>
+<table class="headline-table">
+  <thead><tr>
+    <th>Model</th>
+    <th class="num">Arm A — stripped</th>
+    <th class="num">Arm B — skill</th>
+    <th class="num">Arm C — human</th>
+    <th class="num">Δ B vs A</th>
+    <th class="num">Δ C vs A</th>
+  </tr></thead>
+  <tbody>
+<tr>
+          <td><strong>Opus 4.7</strong></td>
+          <td class="num">405,939</td>
+          <td class="num">403,235</td>
+          <td class="num">438,718</td>
+          <td class="num delta-down">-0.7%</td>
+          <td class="num delta-up">+8.1%</td>
+        </tr>
+<tr>
+          <td><strong>Sonnet 4.6</strong></td>
+          <td class="num">557,902</td>
+          <td class="num">700,377</td>
+          <td class="num">445,117</td>
+          <td class="num delta-up">+25.5%</td>
+          <td class="num delta-down">-20.2%</td>
+        </tr>
+  </tbody>
+</table>
+<p class="meta">Negative Δ = doc comments reduced agent cost (supports hypothesis). Positive Δ = increased cost.</p>
+
+<h2>The mechanism: median discovery calls before first edit</h2>
+<table class="headline-table">
+  <thead><tr>
+    <th>Model</th>
+    <th class="num">Arm A — stripped</th>
+    <th class="num">Arm B — skill</th>
+    <th class="num">Arm C — human</th>
+  </tr></thead>
+  <tbody>
+<tr>
+          <td><strong>Opus 4.7</strong></td>
+          <td class="num">5.5</td>
+          <td class="num">5.0</td>
+          <td class="num">6.0</td>
+        </tr>
+<tr>
+          <td><strong>Sonnet 4.6</strong></td>
+          <td class="num">14.5</td>
+          <td class="num">17.5</td>
+          <td class="num">8.5</td>
+        </tr>
+  </tbody>
+</table>
+<p>Discovery calls = <code>Read</code> / <code>Grep</code> / <code>Glob</code> / <code>Bash</code> tool uses before the agent's first <code>Edit</code>. Counts the number of <em>file-touching exploration acts</em> the agent did to figure out what to do.</p>
+
+<p>Opus's reading strategy is roughly constant — it reads the same number of files regardless of doc state. Sonnet's is doc-quality-dependent: trusted docs (human) reduce reading dramatically; untrusted/insufficient docs (skill-generated) appear to push the agent toward <em>more</em> reading, presumably because it doesn't trust the docs and verifies against the implementation anyway.</p>
 
 <h2>Methodology</h2>
 <p>Three checkouts of the same Swift codebase, identical except for doc-comment state:</p>
 <ul>
-  <li><span class="arm-color-a"><strong>Arm A — stripped:</strong></span> all <code>///</code> and <code>/** */</code> doc comments removed. 570 doc lines deleted across 52 files. Pure deletions; no code, formatting, or whitespace modified.</li>
-  <li><span class="arm-color-b"><strong>Arm B — skill-generated:</strong></span> Arm A's stripped baseline, then one full pass of the <code>doc-comments</code> skill. Generated 681 doc lines across 54 files.</li>
-  <li><span class="arm-color-c"><strong>Arm C — human-written (original):</strong></span> pristine <code>origin/main</code>. Hand-written doc comments by the codebase author.</li>
+  <li><span class="arm-color-a"><strong>Arm A — stripped:</strong></span> all <code>///</code> and <code>/** */</code> doc comments removed. 570 lines deleted across 52 files. Pure deletions.</li>
+  <li><span class="arm-color-b"><strong>Arm B — skill-generated:</strong></span> Arm A baseline + one full pass of the <code>doc-comments</code> skill. Added 681 doc lines across 54 files.</li>
+  <li><span class="arm-color-c"><strong>Arm C — human-written:</strong></span> pristine <code>origin/main</code>, doc comments written by the codebase author.</li>
 </ul>
-<p>Each arm received the identical task prompt below in 3 fresh, non-interactive <code>claude -p</code> sessions
-(stream-json output, <code>--permission-mode bypassPermissions</code>, fresh process per run, working tree
-reset between runs). 9 runs total. Same model, same prompt, no shared context.</p>
 
-<h3>Task prompt (locked)</h3>
+<p>Each arm received the identical locked task prompt in fresh, non-interactive <code>claude -p</code> sessions
+(stream-json output, <code>--permission-mode bypassPermissions</code>, <code>--disable-slash-commands</code>,
+disallowed tools: Skill / AskUserQuestion / WebFetch / WebSearch, fresh process per run, working tree reset between
+runs). Sonnet runs were pre-registered: a hypothesis document was committed and pushed <em>before</em> any Sonnet
+run executed; it is preserved at <a href="preregistration-sonnet.md"><code>preregistration-sonnet.md</code></a>.</p>
+
+<h3>Task prompt (locked, same for all 45 runs across both models)</h3>
 <pre style="background:#fafafa;padding:12px;border-left:3px solid var(--accent);font-size:12px;white-space:pre-wrap;">Add a method to WatchlistManager called markAllEpisodesOfSeasonWatched(mediaId:seasonNumber:episodes:context:) that marks every episode in a given season as watched. After marking, it should trigger the appropriate notification rescheduling so that any pending notifications for those episodes are cancelled or updated. Follow the existing conventions for ModelContext handling, episode persistence, and notification side effects.</pre>
 
-<h3>Metric: input tokens before first edit</h3>
-<p>"First edit" is defined as the first Claude tool call to <code>Edit</code>, <code>Write</code>, <code>MultiEdit</code>,
-or <code>NotebookEdit</code>. All input tokens (including cache reads and cache creation) consumed up to and
-including that turn are summed. This isolates discovery cost — the work the agent does <em>before</em> it knows
-enough to start acting.</p>
+<h3>Metric</h3>
+<p><strong>Input tokens to first edit.</strong> Sum of <code>input_tokens</code> + <code>cache_read_input_tokens</code> + <code>cache_creation_input_tokens</code> across all assistant turns up to and including the first <code>Edit</code> / <code>Write</code> / <code>MultiEdit</code> / <code>NotebookEdit</code> tool call. This isolates the agent's discovery cost — work done <em>before</em> it knows enough to act. Secondary metrics: discovery tool calls before first edit, wall-clock duration, output tokens, total turns.</p>
 
-<h2>Results</h2>
-
-<h3>Input tokens to first edit</h3>
-<svg viewBox="0 0 520 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Input tokens consumed before first edit"><text x="260.0" y="22" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="14" font-weight="600">Input tokens consumed before first edit</text><line x1="50" y1="190.0" x2="470" y2="190.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="194.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">0</text><line x1="50" y1="155.0" x2="470" y2="155.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="159.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">170,414</text><line x1="50" y1="120.0" x2="470" y2="120.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="124.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">340,828</text><line x1="50" y1="85.0" x2="470" y2="85.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="89.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">511,242</text><line x1="50" y1="50.0" x2="470" y2="50.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="54.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">681,657</text><rect x="67.5" y="98.9" width="33.0" height="91.1" fill="#d4574e" opacity="0.85"/><rect x="102.5" y="127.1" width="33.0" height="62.9" fill="#d4574e" opacity="0.85"/><rect x="137.5" y="71.4" width="33.0" height="118.6" fill="#d4574e" opacity="0.85"/><rect x="172.5" y="116.9" width="33.0" height="73.1" fill="#d4574e" opacity="0.85"/><rect x="207.5" y="122.3" width="33.0" height="67.7" fill="#d4574e" opacity="0.85"/><line x1="63.5" y1="116.9" x2="176.5" y2="116.9" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="178.5" y="120.9" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 355,942</text><text x="120.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm A</text><rect x="207.5" y="50.0" width="33.0" height="140.0" fill="#3a7bd5" opacity="0.85"/><rect x="242.5" y="95.6" width="33.0" height="94.4" fill="#3a7bd5" opacity="0.85"/><rect x="277.5" y="106.1" width="33.0" height="83.9" fill="#3a7bd5" opacity="0.85"/><rect x="312.5" y="150.4" width="33.0" height="39.6" fill="#3a7bd5" opacity="0.85"/><rect x="347.5" y="109.0" width="33.0" height="81.0" fill="#3a7bd5" opacity="0.85"/><line x1="203.5" y1="106.1" x2="316.5" y2="106.1" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="318.5" y="110.1" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 408,297</text><text x="260.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm B</text><rect x="347.5" y="102.6" width="33.0" height="87.4" fill="#2ea043" opacity="0.85"/><rect x="382.5" y="96.6" width="33.0" height="93.4" fill="#2ea043" opacity="0.85"/><rect x="417.5" y="97.2" width="33.0" height="92.8" fill="#2ea043" opacity="0.85"/><rect x="452.5" y="125.7" width="33.0" height="64.3" fill="#2ea043" opacity="0.85"/><rect x="487.5" y="125.6" width="33.0" height="64.4" fill="#2ea043" opacity="0.85"/><line x1="343.5" y1="102.6" x2="456.5" y2="102.6" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="458.5" y="106.6" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 425,455</text><text x="400.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm C</text><text x="10" y="120.0" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#666" transform="rotate(-90 10,120.0)">tokens</text></svg>
-<p class="meta">Dashed line = median per arm. Each bar = one run.</p>
-
-<h3>Discovery tool calls (Read / Grep / Glob / Bash) before first edit</h3>
-<svg viewBox="0 0 520 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Discovery tool calls (Read/Grep/Glob/Bash) before first edit"><text x="260.0" y="22" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="14" font-weight="600">Discovery tool calls (Read/Grep/Glob/Bash) before first edit</text><line x1="50" y1="190.0" x2="470" y2="190.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="194.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">0</text><line x1="50" y1="155.0" x2="470" y2="155.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="159.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">2</text><line x1="50" y1="120.0" x2="470" y2="120.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="124.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">5</text><line x1="50" y1="85.0" x2="470" y2="85.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="89.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">7</text><line x1="50" y1="50.0" x2="470" y2="50.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="54.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">10</text><rect x="67.5" y="92.0" width="33.0" height="98.0" fill="#d4574e" opacity="0.85"/><rect x="102.5" y="134.0" width="33.0" height="56.0" fill="#d4574e" opacity="0.85"/><rect x="137.5" y="64.0" width="33.0" height="126.0" fill="#d4574e" opacity="0.85"/><rect x="172.5" y="120.0" width="33.0" height="70.0" fill="#d4574e" opacity="0.85"/><rect x="207.5" y="120.0" width="33.0" height="70.0" fill="#d4574e" opacity="0.85"/><line x1="63.5" y1="120.0" x2="176.5" y2="120.0" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="178.5" y="124.0" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 5</text><text x="120.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm A</text><rect x="207.5" y="50.0" width="33.0" height="140.0" fill="#3a7bd5" opacity="0.85"/><rect x="242.5" y="92.0" width="33.0" height="98.0" fill="#3a7bd5" opacity="0.85"/><rect x="277.5" y="120.0" width="33.0" height="70.0" fill="#3a7bd5" opacity="0.85"/><rect x="312.5" y="162.0" width="33.0" height="28.0" fill="#3a7bd5" opacity="0.85"/><rect x="347.5" y="120.0" width="33.0" height="70.0" fill="#3a7bd5" opacity="0.85"/><line x1="203.5" y1="120.0" x2="316.5" y2="120.0" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="318.5" y="124.0" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 5</text><text x="260.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm B</text><rect x="347.5" y="106.0" width="33.0" height="84.0" fill="#2ea043" opacity="0.85"/><rect x="382.5" y="106.0" width="33.0" height="84.0" fill="#2ea043" opacity="0.85"/><rect x="417.5" y="106.0" width="33.0" height="84.0" fill="#2ea043" opacity="0.85"/><rect x="452.5" y="120.0" width="33.0" height="70.0" fill="#2ea043" opacity="0.85"/><rect x="487.5" y="134.0" width="33.0" height="56.0" fill="#2ea043" opacity="0.85"/><line x1="343.5" y1="106.0" x2="456.5" y2="106.0" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="458.5" y="110.0" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 6</text><text x="400.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm C</text><text x="10" y="120.0" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#666" transform="rotate(-90 10,120.0)">calls</text></svg>
-
-<h3>Wall-clock time per run</h3>
-<svg viewBox="0 0 520 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Wall-clock time per run"><text x="260.0" y="22" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="14" font-weight="600">Wall-clock time per run</text><line x1="50" y1="190.0" x2="470" y2="190.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="194.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">0</text><line x1="50" y1="155.0" x2="470" y2="155.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="159.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">19</text><line x1="50" y1="120.0" x2="470" y2="120.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="124.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">39</text><line x1="50" y1="85.0" x2="470" y2="85.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="89.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">59</text><line x1="50" y1="50.0" x2="470" y2="50.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="54.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">79</text><rect x="67.5" y="101.4" width="33.0" height="88.6" fill="#d4574e" opacity="0.85"/><rect x="102.5" y="99.6" width="33.0" height="90.4" fill="#d4574e" opacity="0.85"/><rect x="137.5" y="58.9" width="33.0" height="131.1" fill="#d4574e" opacity="0.85"/><rect x="172.5" y="94.3" width="33.0" height="95.7" fill="#d4574e" opacity="0.85"/><rect x="207.5" y="106.7" width="33.0" height="83.3" fill="#d4574e" opacity="0.85"/><line x1="63.5" y1="99.6" x2="176.5" y2="99.6" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="178.5" y="103.6" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 51</text><text x="120.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm A</text><rect x="207.5" y="50.0" width="33.0" height="140.0" fill="#3a7bd5" opacity="0.85"/><rect x="242.5" y="65.9" width="33.0" height="124.1" fill="#3a7bd5" opacity="0.85"/><rect x="277.5" y="76.6" width="33.0" height="113.4" fill="#3a7bd5" opacity="0.85"/><rect x="312.5" y="113.8" width="33.0" height="76.2" fill="#3a7bd5" opacity="0.85"/><rect x="347.5" y="87.2" width="33.0" height="102.8" fill="#3a7bd5" opacity="0.85"/><line x1="203.5" y1="76.6" x2="316.5" y2="76.6" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="318.5" y="80.6" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 64</text><text x="260.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm B</text><rect x="347.5" y="103.2" width="33.0" height="86.8" fill="#2ea043" opacity="0.85"/><rect x="382.5" y="76.6" width="33.0" height="113.4" fill="#2ea043" opacity="0.85"/><rect x="417.5" y="85.4" width="33.0" height="104.6" fill="#2ea043" opacity="0.85"/><rect x="452.5" y="85.4" width="33.0" height="104.6" fill="#2ea043" opacity="0.85"/><rect x="487.5" y="78.4" width="33.0" height="111.6" fill="#2ea043" opacity="0.85"/><line x1="343.5" y1="85.4" x2="456.5" y2="85.4" stroke="#222" stroke-width="2" stroke-dasharray="3,2"/><text x="458.5" y="89.4" font-family="-apple-system,sans-serif" font-size="10" fill="#222">med 59</text><text x="400.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm C</text><text x="10" y="120.0" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="10" fill="#666" transform="rotate(-90 10,120.0)">seconds</text></svg>
+<h2>Per-arm distributions</h2>
+<h3>Opus 4.7 — input tokens to first edit</h3><svg viewBox="0 0 520 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Opus 4.7 — input tokens to first edit"><text x="260.0" y="22" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="600">Opus 4.7 — input tokens to first edit</text><line x1="50" y1="190.0" x2="470" y2="190.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="194.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">0</text><line x1="50" y1="155.0" x2="470" y2="155.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="159.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">170,414</text><line x1="50" y1="120.0" x2="470" y2="120.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="124.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">340,828</text><line x1="50" y1="85.0" x2="470" y2="85.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="89.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">511,242</text><line x1="50" y1="50.0" x2="470" y2="50.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="54.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">681,657</text><rect x="61.7" y="98.9" width="10.7" height="91.1" fill="#d4574e" opacity="0.78"/><rect x="73.3" y="122.4" width="10.7" height="67.6" fill="#d4574e" opacity="0.78"/><rect x="85.0" y="127.1" width="10.7" height="62.9" fill="#d4574e" opacity="0.78"/><rect x="96.7" y="71.4" width="10.7" height="118.6" fill="#d4574e" opacity="0.78"/><rect x="108.3" y="116.9" width="10.7" height="73.1" fill="#d4574e" opacity="0.78"/><rect x="120.0" y="122.3" width="10.7" height="67.7" fill="#d4574e" opacity="0.78"/><rect x="131.7" y="111.2" width="10.7" height="78.8" fill="#d4574e" opacity="0.78"/><rect x="143.3" y="102.0" width="10.7" height="88.0" fill="#d4574e" opacity="0.78"/><rect x="155.0" y="95.2" width="10.7" height="94.8" fill="#d4574e" opacity="0.78"/><rect x="166.7" y="89.2" width="10.7" height="100.8" fill="#d4574e" opacity="0.78"/><line x1="57.66666666666667" y1="106.6" x2="182.33333333333331" y2="106.6" stroke="#111" stroke-width="2" stroke-dasharray="3,2"/><text x="184.33333333333331" y="110.6" font-family="-apple-system,sans-serif" font-size="9" fill="#111">405,939</text><text x="120.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm A</text><rect x="201.7" y="50.0" width="10.7" height="140.0" fill="#3a7bd5" opacity="0.78"/><rect x="213.3" y="90.8" width="10.7" height="99.2" fill="#3a7bd5" opacity="0.78"/><rect x="225.0" y="95.6" width="10.7" height="94.4" fill="#3a7bd5" opacity="0.78"/><rect x="236.7" y="106.1" width="10.7" height="83.9" fill="#3a7bd5" opacity="0.78"/><rect x="248.3" y="150.4" width="10.7" height="39.6" fill="#3a7bd5" opacity="0.78"/><rect x="260.0" y="109.0" width="10.7" height="81.0" fill="#3a7bd5" opacity="0.78"/><rect x="271.7" y="108.2" width="10.7" height="81.8" fill="#3a7bd5" opacity="0.78"/><rect x="283.3" y="95.0" width="10.7" height="95.0" fill="#3a7bd5" opacity="0.78"/><rect x="295.0" y="127.2" width="10.7" height="62.8" fill="#3a7bd5" opacity="0.78"/><rect x="306.7" y="117.1" width="10.7" height="72.9" fill="#3a7bd5" opacity="0.78"/><line x1="197.66666666666669" y1="107.2" x2="322.33333333333337" y2="107.2" stroke="#111" stroke-width="2" stroke-dasharray="3,2"/><text x="324.33333333333337" y="111.2" font-family="-apple-system,sans-serif" font-size="9" fill="#111">403,235</text><text x="260.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm B</text><rect x="341.7" y="102.6" width="10.7" height="87.4" fill="#2ea043" opacity="0.78"/><rect x="353.3" y="91.6" width="10.7" height="98.4" fill="#2ea043" opacity="0.78"/><rect x="365.0" y="96.6" width="10.7" height="93.4" fill="#2ea043" opacity="0.78"/><rect x="376.7" y="97.2" width="10.7" height="92.8" fill="#2ea043" opacity="0.78"/><rect x="388.3" y="125.7" width="10.7" height="64.3" fill="#2ea043" opacity="0.78"/><rect x="400.0" y="125.6" width="10.7" height="64.4" fill="#2ea043" opacity="0.78"/><rect x="411.7" y="119.8" width="10.7" height="70.2" fill="#2ea043" opacity="0.78"/><rect x="423.3" y="84.4" width="10.7" height="105.6" fill="#2ea043" opacity="0.78"/><rect x="435.0" y="125.1" width="10.7" height="64.9" fill="#2ea043" opacity="0.78"/><rect x="446.7" y="93.4" width="10.7" height="96.6" fill="#2ea043" opacity="0.78"/><line x1="337.6666666666667" y1="99.9" x2="462.33333333333337" y2="99.9" stroke="#111" stroke-width="2" stroke-dasharray="3,2"/><text x="464.33333333333337" y="103.9" font-family="-apple-system,sans-serif" font-size="9" fill="#111">438,718</text><text x="400.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm C</text></svg><h3>Opus 4.7 — discovery calls before first edit</h3><svg viewBox="0 0 520 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Opus 4.7 — discovery calls"><text x="260.0" y="22" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="600">Opus 4.7 — discovery calls</text><line x1="50" y1="190.0" x2="470" y2="190.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="194.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">0</text><line x1="50" y1="155.0" x2="470" y2="155.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="159.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">2</text><line x1="50" y1="120.0" x2="470" y2="120.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="124.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">5</text><line x1="50" y1="85.0" x2="470" y2="85.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="89.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">7</text><line x1="50" y1="50.0" x2="470" y2="50.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="54.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">10</text><rect x="61.7" y="92.0" width="10.7" height="98.0" fill="#d4574e" opacity="0.78"/><rect x="73.3" y="120.0" width="10.7" height="70.0" fill="#d4574e" opacity="0.78"/><rect x="85.0" y="134.0" width="10.7" height="56.0" fill="#d4574e" opacity="0.78"/><rect x="96.7" y="64.0" width="10.7" height="126.0" fill="#d4574e" opacity="0.78"/><rect x="108.3" y="120.0" width="10.7" height="70.0" fill="#d4574e" opacity="0.78"/><rect x="120.0" y="120.0" width="10.7" height="70.0" fill="#d4574e" opacity="0.78"/><rect x="131.7" y="120.0" width="10.7" height="70.0" fill="#d4574e" opacity="0.78"/><rect x="143.3" y="106.0" width="10.7" height="84.0" fill="#d4574e" opacity="0.78"/><rect x="155.0" y="92.0" width="10.7" height="98.0" fill="#d4574e" opacity="0.78"/><rect x="166.7" y="92.0" width="10.7" height="98.0" fill="#d4574e" opacity="0.78"/><line x1="57.66666666666667" y1="113.0" x2="182.33333333333331" y2="113.0" stroke="#111" stroke-width="2" stroke-dasharray="3,2"/><text x="184.33333333333331" y="117.0" font-family="-apple-system,sans-serif" font-size="9" fill="#111">5</text><text x="120.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm A</text><rect x="201.7" y="50.0" width="10.7" height="140.0" fill="#3a7bd5" opacity="0.78"/><rect x="213.3" y="92.0" width="10.7" height="98.0" fill="#3a7bd5" opacity="0.78"/><rect x="225.0" y="92.0" width="10.7" height="98.0" fill="#3a7bd5" opacity="0.78"/><rect x="236.7" y="120.0" width="10.7" height="70.0" fill="#3a7bd5" opacity="0.78"/><rect x="248.3" y="162.0" width="10.7" height="28.0" fill="#3a7bd5" opacity="0.78"/><rect x="260.0" y="120.0" width="10.7" height="70.0" fill="#3a7bd5" opacity="0.78"/><rect x="271.7" y="120.0" width="10.7" height="70.0" fill="#3a7bd5" opacity="0.78"/><rect x="283.3" y="106.0" width="10.7" height="84.0" fill="#3a7bd5" opacity="0.78"/><rect x="295.0" y="134.0" width="10.7" height="56.0" fill="#3a7bd5" opacity="0.78"/><rect x="306.7" y="120.0" width="10.7" height="70.0" fill="#3a7bd5" opacity="0.78"/><line x1="197.66666666666669" y1="120.0" x2="322.33333333333337" y2="120.0" stroke="#111" stroke-width="2" stroke-dasharray="3,2"/><text x="324.33333333333337" y="124.0" font-family="-apple-system,sans-serif" font-size="9" fill="#111">5</text><text x="260.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm B</text><rect x="341.7" y="106.0" width="10.7" height="84.0" fill="#2ea043" opacity="0.78"/><rect x="353.3" y="92.0" width="10.7" height="98.0" fill="#2ea043" opacity="0.78"/><rect x="365.0" y="106.0" width="10.7" height="84.0" fill="#2ea043" opacity="0.78"/><rect x="376.7" y="106.0" width="10.7" height="84.0" fill="#2ea043" opacity="0.78"/><rect x="388.3" y="120.0" width="10.7" height="70.0" fill="#2ea043" opacity="0.78"/><rect x="400.0" y="134.0" width="10.7" height="56.0" fill="#2ea043" opacity="0.78"/><rect x="411.7" y="120.0" width="10.7" height="70.0" fill="#2ea043" opacity="0.78"/><rect x="423.3" y="78.0" width="10.7" height="112.0" fill="#2ea043" opacity="0.78"/><rect x="435.0" y="134.0" width="10.7" height="56.0" fill="#2ea043" opacity="0.78"/><rect x="446.7" y="106.0" width="10.7" height="84.0" fill="#2ea043" opacity="0.78"/><line x1="337.6666666666667" y1="106.0" x2="462.33333333333337" y2="106.0" stroke="#111" stroke-width="2" stroke-dasharray="3,2"/><text x="464.33333333333337" y="110.0" font-family="-apple-system,sans-serif" font-size="9" fill="#111">6</text><text x="400.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm C</text></svg><h3>Sonnet 4.6 — input tokens to first edit</h3><svg viewBox="0 0 520 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sonnet 4.6 — input tokens to first edit"><text x="260.0" y="22" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="600">Sonnet 4.6 — input tokens to first edit</text><line x1="50" y1="190.0" x2="470" y2="190.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="194.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">0</text><line x1="50" y1="155.0" x2="470" y2="155.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="159.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">284,589</text><line x1="50" y1="120.0" x2="470" y2="120.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="124.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">569,178</text><line x1="50" y1="85.0" x2="470" y2="85.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="89.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">853,767</text><line x1="50" y1="50.0" x2="470" y2="50.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="54.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">1,138,357</text><rect x="61.7" y="102.7" width="10.7" height="87.3" fill="#d4574e" opacity="0.78"/><rect x="73.3" y="105.3" width="10.7" height="84.7" fill="#d4574e" opacity="0.78"/><rect x="85.0" y="129.1" width="10.7" height="60.9" fill="#d4574e" opacity="0.78"/><rect x="96.7" y="88.0" width="10.7" height="102.0" fill="#d4574e" opacity="0.78"/><rect x="108.3" y="113.7" width="10.7" height="76.3" fill="#d4574e" opacity="0.78"/><rect x="120.0" y="151.5" width="10.7" height="38.5" fill="#d4574e" opacity="0.78"/><rect x="131.7" y="153.7" width="10.7" height="36.3" fill="#d4574e" opacity="0.78"/><rect x="143.3" y="151.5" width="10.7" height="38.5" fill="#d4574e" opacity="0.78"/><rect x="155.0" y="133.2" width="10.7" height="56.8" fill="#d4574e" opacity="0.78"/><rect x="166.7" y="73.4" width="10.7" height="116.6" fill="#d4574e" opacity="0.78"/><line x1="57.66666666666667" y1="121.4" x2="182.33333333333331" y2="121.4" stroke="#111" stroke-width="2" stroke-dasharray="3,2"/><text x="184.33333333333331" y="125.4" font-family="-apple-system,sans-serif" font-size="9" fill="#111">557,902</text><text x="120.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm A</text><rect x="201.7" y="108.0" width="10.7" height="82.0" fill="#3a7bd5" opacity="0.78"/><rect x="213.3" y="145.1" width="10.7" height="44.9" fill="#3a7bd5" opacity="0.78"/><rect x="225.0" y="72.5" width="10.7" height="117.5" fill="#3a7bd5" opacity="0.78"/><rect x="236.7" y="50.0" width="10.7" height="140.0" fill="#3a7bd5" opacity="0.78"/><rect x="248.3" y="150.0" width="10.7" height="40.0" fill="#3a7bd5" opacity="0.78"/><rect x="260.0" y="150.0" width="10.7" height="40.0" fill="#3a7bd5" opacity="0.78"/><rect x="271.7" y="87.0" width="10.7" height="103.0" fill="#3a7bd5" opacity="0.78"/><rect x="283.3" y="78.1" width="10.7" height="111.9" fill="#3a7bd5" opacity="0.78"/><rect x="295.0" y="121.1" width="10.7" height="68.9" fill="#3a7bd5" opacity="0.78"/><rect x="306.7" y="99.7" width="10.7" height="90.3" fill="#3a7bd5" opacity="0.78"/><line x1="197.66666666666669" y1="103.9" x2="322.33333333333337" y2="103.9" stroke="#111" stroke-width="2" stroke-dasharray="3,2"/><text x="324.33333333333337" y="107.9" font-family="-apple-system,sans-serif" font-size="9" fill="#111">700,377</text><text x="260.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm B</text><rect x="341.7" y="140.2" width="10.7" height="49.8" fill="#2ea043" opacity="0.78"/><rect x="353.3" y="107.2" width="10.7" height="82.8" fill="#2ea043" opacity="0.78"/><rect x="365.0" y="150.2" width="10.7" height="39.8" fill="#2ea043" opacity="0.78"/><rect x="376.7" y="130.3" width="10.7" height="59.7" fill="#2ea043" opacity="0.78"/><rect x="388.3" y="124.5" width="10.7" height="65.5" fill="#2ea043" opacity="0.78"/><rect x="400.0" y="146.7" width="10.7" height="43.3" fill="#2ea043" opacity="0.78"/><rect x="411.7" y="100.6" width="10.7" height="89.4" fill="#2ea043" opacity="0.78"/><rect x="423.3" y="79.5" width="10.7" height="110.5" fill="#2ea043" opacity="0.78"/><rect x="435.0" y="153.9" width="10.7" height="36.1" fill="#2ea043" opacity="0.78"/><rect x="446.7" y="150.2" width="10.7" height="39.8" fill="#2ea043" opacity="0.78"/><line x1="337.6666666666667" y1="135.3" x2="462.33333333333337" y2="135.3" stroke="#111" stroke-width="2" stroke-dasharray="3,2"/><text x="464.33333333333337" y="139.3" font-family="-apple-system,sans-serif" font-size="9" fill="#111">445,117</text><text x="400.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm C</text></svg><h3>Sonnet 4.6 — discovery calls before first edit</h3><svg viewBox="0 0 520 240" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sonnet 4.6 — discovery calls"><text x="260.0" y="22" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="13" font-weight="600">Sonnet 4.6 — discovery calls</text><line x1="50" y1="190.0" x2="470" y2="190.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="194.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">0</text><line x1="50" y1="155.0" x2="470" y2="155.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="159.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">6</text><line x1="50" y1="120.0" x2="470" y2="120.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="124.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">13</text><line x1="50" y1="85.0" x2="470" y2="85.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="89.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">19</text><line x1="50" y1="50.0" x2="470" y2="50.0" stroke="#e5e5e5" stroke-width="1"/><text x="44" y="54.0" text-anchor="end" font-family="-apple-system,sans-serif" font-size="10" fill="#666">26</text><rect x="61.7" y="93.1" width="10.7" height="96.9" fill="#d4574e" opacity="0.78"/><rect x="73.3" y="98.5" width="10.7" height="91.5" fill="#d4574e" opacity="0.78"/><rect x="85.0" y="125.4" width="10.7" height="64.6" fill="#d4574e" opacity="0.78"/><rect x="96.7" y="82.3" width="10.7" height="107.7" fill="#d4574e" opacity="0.78"/><rect x="108.3" y="98.5" width="10.7" height="91.5" fill="#d4574e" opacity="0.78"/><rect x="120.0" y="163.1" width="10.7" height="26.9" fill="#d4574e" opacity="0.78"/><rect x="131.7" y="146.9" width="10.7" height="43.1" fill="#d4574e" opacity="0.78"/><rect x="143.3" y="163.1" width="10.7" height="26.9" fill="#d4574e" opacity="0.78"/><rect x="155.0" y="125.4" width="10.7" height="64.6" fill="#d4574e" opacity="0.78"/><rect x="166.7" y="71.5" width="10.7" height="118.5" fill="#d4574e" opacity="0.78"/><line x1="57.66666666666667" y1="111.9" x2="182.33333333333331" y2="111.9" stroke="#111" stroke-width="2" stroke-dasharray="3,2"/><text x="184.33333333333331" y="115.9" font-family="-apple-system,sans-serif" font-size="9" fill="#111">14</text><text x="120.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm A</text><rect x="201.7" y="103.8" width="10.7" height="86.2" fill="#3a7bd5" opacity="0.78"/><rect x="213.3" y="146.9" width="10.7" height="43.1" fill="#3a7bd5" opacity="0.78"/><rect x="225.0" y="71.5" width="10.7" height="118.5" fill="#3a7bd5" opacity="0.78"/><rect x="236.7" y="50.0" width="10.7" height="140.0" fill="#3a7bd5" opacity="0.78"/><rect x="248.3" y="163.1" width="10.7" height="26.9" fill="#3a7bd5" opacity="0.78"/><rect x="260.0" y="163.1" width="10.7" height="26.9" fill="#3a7bd5" opacity="0.78"/><rect x="271.7" y="76.9" width="10.7" height="113.1" fill="#3a7bd5" opacity="0.78"/><rect x="283.3" y="66.2" width="10.7" height="123.8" fill="#3a7bd5" opacity="0.78"/><rect x="295.0" y="120.0" width="10.7" height="70.0" fill="#3a7bd5" opacity="0.78"/><rect x="306.7" y="87.7" width="10.7" height="102.3" fill="#3a7bd5" opacity="0.78"/><line x1="197.66666666666669" y1="95.8" x2="322.33333333333337" y2="95.8" stroke="#111" stroke-width="2" stroke-dasharray="3,2"/><text x="324.33333333333337" y="99.8" font-family="-apple-system,sans-serif" font-size="9" fill="#111">17</text><text x="260.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm B</text><rect x="341.7" y="157.7" width="10.7" height="32.3" fill="#2ea043" opacity="0.78"/><rect x="353.3" y="103.8" width="10.7" height="86.2" fill="#2ea043" opacity="0.78"/><rect x="365.0" y="163.1" width="10.7" height="26.9" fill="#2ea043" opacity="0.78"/><rect x="376.7" y="130.8" width="10.7" height="59.2" fill="#2ea043" opacity="0.78"/><rect x="388.3" y="125.4" width="10.7" height="64.6" fill="#2ea043" opacity="0.78"/><rect x="400.0" y="157.7" width="10.7" height="32.3" fill="#2ea043" opacity="0.78"/><rect x="411.7" y="87.7" width="10.7" height="102.3" fill="#2ea043" opacity="0.78"/><rect x="423.3" y="66.2" width="10.7" height="123.8" fill="#2ea043" opacity="0.78"/><rect x="435.0" y="168.5" width="10.7" height="21.5" fill="#2ea043" opacity="0.78"/><rect x="446.7" y="163.1" width="10.7" height="26.9" fill="#2ea043" opacity="0.78"/><line x1="337.6666666666667" y1="144.2" x2="462.33333333333337" y2="144.2" stroke="#111" stroke-width="2" stroke-dasharray="3,2"/><text x="464.33333333333337" y="148.2" font-family="-apple-system,sans-serif" font-size="9" fill="#111">8</text><text x="400.0" y="208" text-anchor="middle" font-family="-apple-system,sans-serif" font-size="11" font-weight="600">Arm C</text></svg>
+<p class="meta">Dashed line and label = median per arm. Each bar is one run.</p>
 
 <h2>Per-run detail</h2>
-
-<h3 class="arm-color-a">Arm A — stripped (no docs)</h3>
-<table>
-  <thead><tr>
-    <th>Run</th><th class="num">Input total</th><th class="num">Input to first edit</th>
-    <th class="num">Output total</th><th class="num">Disc. calls pre-edit</th>
-    <th class="num">Turns</th><th class="num">Duration</th><th>Edited?</th>
-  </tr></thead>
-  <tbody>
+<h3>Opus 4.7</h3><h4 class="arm-color-a">Arm A — stripped (no docs) (N=10)</h4>
+            <table><thead><tr>
+              <th>Run</th><th class="num">Input total</th><th class="num">Input to first edit</th>
+              <th class="num">Output total</th><th class="num">Disc. calls pre-edit</th>
+              <th class="num">Turns</th><th class="num">Duration</th>
+            </tr></thead><tbody>
               <tr>
                 <td>1</td>
                 <td class="num">482,770</td>
@@ -124,9 +155,7 @@ enough to start acting.</p>
                 <td class="num">7</td>
                 <td class="num">14</td>
                 <td class="num">50s</td>
-                <td>Yes</td>
               </tr>
-
               <tr>
                 <td>2</td>
                 <td class="num">347,674</td>
@@ -135,9 +164,7 @@ enough to start acting.</p>
                 <td class="num">4</td>
                 <td class="num">10</td>
                 <td class="num">51s</td>
-                <td>Yes</td>
               </tr>
-
               <tr>
                 <td>3</td>
                 <td class="num">620,457</td>
@@ -146,9 +173,7 @@ enough to start acting.</p>
                 <td class="num">9</td>
                 <td class="num">17</td>
                 <td class="num">74s</td>
-                <td>Yes</td>
               </tr>
-
               <tr>
                 <td>4</td>
                 <td class="num">399,207</td>
@@ -157,9 +182,7 @@ enough to start acting.</p>
                 <td class="num">5</td>
                 <td class="num">11</td>
                 <td class="num">54s</td>
-                <td>Yes</td>
               </tr>
-
               <tr>
                 <td>5</td>
                 <td class="num">367,684</td>
@@ -168,18 +191,57 @@ enough to start acting.</p>
                 <td class="num">5</td>
                 <td class="num">11</td>
                 <td class="num">47s</td>
-                <td>Yes</td>
-              </tr></tbody>
-</table>
-
-<h3 class="arm-color-b">Arm B — skill-generated</h3>
-<table>
-  <thead><tr>
-    <th>Run</th><th class="num">Input total</th><th class="num">Input to first edit</th>
-    <th class="num">Output total</th><th class="num">Disc. calls pre-edit</th>
-    <th class="num">Turns</th><th class="num">Duration</th><th>Edited?</th>
-  </tr></thead>
-  <tbody>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td class="num">425,113</td>
+                <td class="num">383,447</td>
+                <td class="num">523</td>
+                <td class="num">5</td>
+                <td class="num">12</td>
+                <td class="num">62s</td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td class="num">471,121</td>
+                <td class="num">428,431</td>
+                <td class="num">523</td>
+                <td class="num">6</td>
+                <td class="num">13</td>
+                <td class="num">64s</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td class="num">503,849</td>
+                <td class="num">461,593</td>
+                <td class="num">494</td>
+                <td class="num">7</td>
+                <td class="num">14</td>
+                <td class="num">73s</td>
+              </tr>
+              <tr>
+                <td>9</td>
+                <td class="num">533,559</td>
+                <td class="num">490,929</td>
+                <td class="num">646</td>
+                <td class="num">7</td>
+                <td class="num">15</td>
+                <td class="num">73s</td>
+              </tr>
+              <tr>
+                <td>10</td>
+                <td class="num">366,952</td>
+                <td class="num">329,117</td>
+                <td class="num">505</td>
+                <td class="num">5</td>
+                <td class="num">11</td>
+                <td class="num">56s</td>
+              </tr></tbody></table><h4 class="arm-color-b">Arm B — skill-generated (N=10)</h4>
+            <table><thead><tr>
+              <th>Run</th><th class="num">Input total</th><th class="num">Input to first edit</th>
+              <th class="num">Output total</th><th class="num">Disc. calls pre-edit</th>
+              <th class="num">Turns</th><th class="num">Duration</th>
+            </tr></thead><tbody>
               <tr>
                 <td>1</td>
                 <td class="num">732,724</td>
@@ -188,9 +250,7 @@ enough to start acting.</p>
                 <td class="num">10</td>
                 <td class="num">18</td>
                 <td class="num">79s</td>
-                <td>Yes</td>
               </tr>
-
               <tr>
                 <td>2</td>
                 <td class="num">501,788</td>
@@ -199,9 +259,7 @@ enough to start acting.</p>
                 <td class="num">7</td>
                 <td class="num">14</td>
                 <td class="num">70s</td>
-                <td>Yes</td>
               </tr>
-
               <tr>
                 <td>3</td>
                 <td class="num">453,519</td>
@@ -210,9 +268,7 @@ enough to start acting.</p>
                 <td class="num">5</td>
                 <td class="num">12</td>
                 <td class="num">64s</td>
-                <td>Yes</td>
               </tr>
-
               <tr>
                 <td>4</td>
                 <td class="num">230,737</td>
@@ -221,9 +277,7 @@ enough to start acting.</p>
                 <td class="num">2</td>
                 <td class="num">7</td>
                 <td class="num">43s</td>
-                <td>Yes</td>
               </tr>
-
               <tr>
                 <td>5</td>
                 <td class="num">437,017</td>
@@ -232,18 +286,57 @@ enough to start acting.</p>
                 <td class="num">5</td>
                 <td class="num">12</td>
                 <td class="num">58s</td>
-                <td>Yes</td>
-              </tr></tbody>
-</table>
-
-<h3 class="arm-color-c">Arm C — human-written (original)</h3>
-<table>
-  <thead><tr>
-    <th>Run</th><th class="num">Input total</th><th class="num">Input to first edit</th>
-    <th class="num">Output total</th><th class="num">Disc. calls pre-edit</th>
-    <th class="num">Turns</th><th class="num">Duration</th><th>Edited?</th>
-  </tr></thead>
-  <tbody>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td class="num">441,736</td>
+                <td class="num">398,174</td>
+                <td class="num">604</td>
+                <td class="num">5</td>
+                <td class="num">12</td>
+                <td class="num">58s</td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td class="num">503,753</td>
+                <td class="num">462,354</td>
+                <td class="num">652</td>
+                <td class="num">6</td>
+                <td class="num">14</td>
+                <td class="num">66s</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td class="num">346,577</td>
+                <td class="num">305,968</td>
+                <td class="num">418</td>
+                <td class="num">4</td>
+                <td class="num">10</td>
+                <td class="num">63s</td>
+              </tr>
+              <tr>
+                <td>9</td>
+                <td class="num">399,459</td>
+                <td class="num">354,784</td>
+                <td class="num">432</td>
+                <td class="num">5</td>
+                <td class="num">11</td>
+                <td class="num">81s</td>
+              </tr>
+              <tr>
+                <td>10</td>
+                <td class="num">526,105</td>
+                <td class="num">482,930</td>
+                <td class="num">618</td>
+                <td class="num">7</td>
+                <td class="num">14</td>
+                <td class="num">67s</td>
+              </tr></tbody></table><h4 class="arm-color-c">Arm C — human-written (original) (N=10)</h4>
+            <table><thead><tr>
+              <th>Run</th><th class="num">Input total</th><th class="num">Input to first edit</th>
+              <th class="num">Output total</th><th class="num">Disc. calls pre-edit</th>
+              <th class="num">Turns</th><th class="num">Duration</th>
+            </tr></thead><tbody>
               <tr>
                 <td>1</td>
                 <td class="num">467,075</td>
@@ -252,9 +345,7 @@ enough to start acting.</p>
                 <td class="num">6</td>
                 <td class="num">13</td>
                 <td class="num">49s</td>
-                <td>Yes</td>
               </tr>
-
               <tr>
                 <td>2</td>
                 <td class="num">500,751</td>
@@ -263,9 +354,7 @@ enough to start acting.</p>
                 <td class="num">6</td>
                 <td class="num">13</td>
                 <td class="num">64s</td>
-                <td>Yes</td>
               </tr>
-
               <tr>
                 <td>3</td>
                 <td class="num">497,859</td>
@@ -274,9 +363,7 @@ enough to start acting.</p>
                 <td class="num">6</td>
                 <td class="num">13</td>
                 <td class="num">59s</td>
-                <td>Yes</td>
               </tr>
-
               <tr>
                 <td>4</td>
                 <td class="num">355,847</td>
@@ -285,9 +372,7 @@ enough to start acting.</p>
                 <td class="num">5</td>
                 <td class="num">10</td>
                 <td class="num">59s</td>
-                <td>Yes</td>
               </tr>
-
               <tr>
                 <td>5</td>
                 <td class="num">358,432</td>
@@ -296,12 +381,340 @@ enough to start acting.</p>
                 <td class="num">4</td>
                 <td class="num">10</td>
                 <td class="num">63s</td>
-                <td>Yes</td>
-              </tr></tbody>
-</table>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td class="num">382,379</td>
+                <td class="num">341,981</td>
+                <td class="num">418</td>
+                <td class="num">5</td>
+                <td class="num">11</td>
+                <td class="num">69s</td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td class="num">558,024</td>
+                <td class="num">514,080</td>
+                <td class="num">692</td>
+                <td class="num">8</td>
+                <td class="num">15</td>
+                <td class="num">118s</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td class="num">359,701</td>
+                <td class="num">315,959</td>
+                <td class="num">414</td>
+                <td class="num">4</td>
+                <td class="num">10</td>
+                <td class="num">60s</td>
+              </tr>
+              <tr>
+                <td>9</td>
+                <td class="num">513,473</td>
+                <td class="num">470,248</td>
+                <td class="num">503</td>
+                <td class="num">6</td>
+                <td class="num">14</td>
+                <td class="num">61s</td>
+              </tr>
+              <tr>
+                <td>10</td>
+                <td class="num">522,691</td>
+                <td class="num">479,307</td>
+                <td class="num">626</td>
+                <td class="num">7</td>
+                <td class="num">14</td>
+                <td class="num">57s</td>
+              </tr></tbody></table><h3>Sonnet 4.6</h3><h4 class="arm-color-a">Arm A — stripped (no docs) (N=10)</h4>
+            <table><thead><tr>
+              <th>Run</th><th class="num">Input total</th><th class="num">Input to first edit</th>
+              <th class="num">Output total</th><th class="num">Disc. calls pre-edit</th>
+              <th class="num">Turns</th><th class="num">Duration</th>
+            </tr></thead><tbody>
+              <tr>
+                <td>1</td>
+                <td class="num">738,269</td>
+                <td class="num">709,694</td>
+                <td class="num">265</td>
+                <td class="num">18</td>
+                <td class="num">29</td>
+                <td class="num">85s</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td class="num">526,113</td>
+                <td class="num">495,066</td>
+                <td class="num">206</td>
+                <td class="num">12</td>
+                <td class="num">23</td>
+                <td class="num">100s</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td class="num">857,087</td>
+                <td class="num">829,133</td>
+                <td class="num">81</td>
+                <td class="num">20</td>
+                <td class="num">29</td>
+                <td class="num">88s</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td class="num">648,458</td>
+                <td class="num">620,738</td>
+                <td class="num">94</td>
+                <td class="num">17</td>
+                <td class="num">26</td>
+                <td class="num">80s</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td class="num">346,710</td>
+                <td class="num">313,274</td>
+                <td class="num">183</td>
+                <td class="num">5</td>
+                <td class="num">13</td>
+                <td class="num">42s</td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td class="num">321,867</td>
+                <td class="num">295,150</td>
+                <td class="num">104</td>
+                <td class="num">8</td>
+                <td class="num">15</td>
+                <td class="num">53s</td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td class="num">347,456</td>
+                <td class="num">313,217</td>
+                <td class="num">173</td>
+                <td class="num">5</td>
+                <td class="num">13</td>
+                <td class="num">56s</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td class="num">488,761</td>
+                <td class="num">461,505</td>
+                <td class="num">134</td>
+                <td class="num">12</td>
+                <td class="num">21</td>
+                <td class="num">58s</td>
+              </tr>
+              <tr>
+                <td>9</td>
+                <td class="num">979,576</td>
+                <td class="num">948,239</td>
+                <td class="num">239</td>
+                <td class="num">22</td>
+                <td class="num">34</td>
+                <td class="num">106s</td>
+              </tr>
+              <tr>
+                <td>10</td>
+                <td class="num">717,053</td>
+                <td class="num">688,482</td>
+                <td class="num">222</td>
+                <td class="num">17</td>
+                <td class="num">26</td>
+                <td class="num">96s</td>
+              </tr></tbody></table><h4 class="arm-color-b">Arm B — skill-generated (N=10)</h4>
+            <table><thead><tr>
+              <th>Run</th><th class="num">Input total</th><th class="num">Input to first edit</th>
+              <th class="num">Output total</th><th class="num">Disc. calls pre-edit</th>
+              <th class="num">Turns</th><th class="num">Duration</th>
+            </tr></thead><tbody>
+              <tr>
+                <td>1</td>
+                <td class="num">701,575</td>
+                <td class="num">666,601</td>
+                <td class="num">88</td>
+                <td class="num">16</td>
+                <td class="num">25</td>
+                <td class="num">99s</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td class="num">985,972</td>
+                <td class="num">955,733</td>
+                <td class="num">97</td>
+                <td class="num">22</td>
+                <td class="num">31</td>
+                <td class="num">96s</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td class="num">1,168,509</td>
+                <td class="num">1,138,357</td>
+                <td class="num">393</td>
+                <td class="num">26</td>
+                <td class="num">35</td>
+                <td class="num">107s</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td class="num">360,988</td>
+                <td class="num">324,953</td>
+                <td class="num">183</td>
+                <td class="num">5</td>
+                <td class="num">13</td>
+                <td class="num">54s</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td class="num">360,968</td>
+                <td class="num">324,971</td>
+                <td class="num">187</td>
+                <td class="num">5</td>
+                <td class="num">13</td>
+                <td class="num">48s</td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td class="num">867,242</td>
+                <td class="num">837,592</td>
+                <td class="num">106</td>
+                <td class="num">21</td>
+                <td class="num">32</td>
+                <td class="num">90s</td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td class="num">939,528</td>
+                <td class="num">910,027</td>
+                <td class="num">139</td>
+                <td class="num">23</td>
+                <td class="num">32</td>
+                <td class="num">104s</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td class="num">589,041</td>
+                <td class="num">560,001</td>
+                <td class="num">66</td>
+                <td class="num">13</td>
+                <td class="num">22</td>
+                <td class="num">77s</td>
+              </tr>
+              <tr>
+                <td>9</td>
+                <td class="num">763,415</td>
+                <td class="num">734,153</td>
+                <td class="num">219</td>
+                <td class="num">19</td>
+                <td class="num">28</td>
+                <td class="num">97s</td>
+              </tr>
+              <tr>
+                <td>10</td>
+                <td class="num">398,831</td>
+                <td class="num">365,404</td>
+                <td class="num">75</td>
+                <td class="num">8</td>
+                <td class="num">17</td>
+                <td class="num">83s</td>
+              </tr></tbody></table><h4 class="arm-color-c">Arm C — human-written (original) (N=10)</h4>
+            <table><thead><tr>
+              <th>Run</th><th class="num">Input total</th><th class="num">Input to first edit</th>
+              <th class="num">Output total</th><th class="num">Disc. calls pre-edit</th>
+              <th class="num">Turns</th><th class="num">Duration</th>
+            </tr></thead><tbody>
+              <tr>
+                <td>1</td>
+                <td class="num">438,109</td>
+                <td class="num">405,017</td>
+                <td class="num">217</td>
+                <td class="num">6</td>
+                <td class="num">18</td>
+                <td class="num">78s</td>
+              </tr>
+              <tr>
+                <td>2</td>
+                <td class="num">359,682</td>
+                <td class="num">323,931</td>
+                <td class="num">183</td>
+                <td class="num">5</td>
+                <td class="num">13</td>
+                <td class="num">48s</td>
+              </tr>
+              <tr>
+                <td>3</td>
+                <td class="num">513,486</td>
+                <td class="num">485,217</td>
+                <td class="num">90</td>
+                <td class="num">11</td>
+                <td class="num">22</td>
+                <td class="num">67s</td>
+              </tr>
+              <tr>
+                <td>4</td>
+                <td class="num">563,159</td>
+                <td class="num">532,902</td>
+                <td class="num">80</td>
+                <td class="num">12</td>
+                <td class="num">22</td>
+                <td class="num">75s</td>
+              </tr>
+              <tr>
+                <td>5</td>
+                <td class="num">387,179</td>
+                <td class="num">352,005</td>
+                <td class="num">266</td>
+                <td class="num">6</td>
+                <td class="num">15</td>
+                <td class="num">55s</td>
+              </tr>
+              <tr>
+                <td>6</td>
+                <td class="num">755,261</td>
+                <td class="num">726,722</td>
+                <td class="num">135</td>
+                <td class="num">19</td>
+                <td class="num">28</td>
+                <td class="num">80s</td>
+              </tr>
+              <tr>
+                <td>7</td>
+                <td class="num">932,886</td>
+                <td class="num">898,862</td>
+                <td class="num">239</td>
+                <td class="num">23</td>
+                <td class="num">34</td>
+                <td class="num">176s</td>
+              </tr>
+              <tr>
+                <td>8</td>
+                <td class="num">321,806</td>
+                <td class="num">293,582</td>
+                <td class="num">133</td>
+                <td class="num">4</td>
+                <td class="num">14</td>
+                <td class="num">66s</td>
+              </tr>
+              <tr>
+                <td>9</td>
+                <td class="num">360,105</td>
+                <td class="num">324,018</td>
+                <td class="num">190</td>
+                <td class="num">5</td>
+                <td class="num">13</td>
+                <td class="num">55s</td>
+              </tr>
+              <tr>
+                <td>10</td>
+                <td class="num">704,711</td>
+                <td class="num">673,294</td>
+                <td class="num">273</td>
+                <td class="num">16</td>
+                <td class="num">27</td>
+                <td class="num">86s</td>
+              </tr></tbody></table>
 
 <h2>Demo: one file, three states</h2>
-<p>The same file under all three arms. The agent sees one of these depending on the arm; the code is identical.</p>
+<p>The same file under each arm. The agent saw one of these depending on the arm; the underlying code is identical.</p>
 
 <p class="meta">File: <code>WCIWKit/Models/Media.swift</code></p>
 <div class="demo">
@@ -551,25 +964,19 @@ extension Media: Equatable, Hashable {
 <h2>Honest caveats</h2>
 <div class="caveats">
   <ul>
-    <li><strong>N = 3 per arm.</strong> 9 runs total. This is directional, not statistically significant. Variance within an arm is real and visible in the per-run tables.</li>
-    <li><strong>One fixture, one task, one language.</strong> Results characterize <em>this</em> codebase and <em>this</em> task. They do not generalize without additional fixtures.</li>
+    <li><strong>N=10 per cell.</strong> 60 runs across both models. Real but small; treat effect sizes as directional with reasonable confidence intervals visible in the per-arm charts.</li>
+    <li><strong>One fixture, one task, one language.</strong> Results characterize <em>this combination</em>. They do not generalize without additional fixtures, tasks, or languages.</li>
+    <li><strong>Temporal separation.</strong> Opus runs occurred on 2026-05-14 (first 5 per arm) and 2026-05-15 (last 5 per arm); Sonnet runs all occurred on 2026-05-15. Anthropic infrastructure state may differ across days.</li>
     <li><strong>"First edit" is a proxy.</strong> It approximates the moment an agent has enough context to act. It does not capture quality of the resulting edit or downstream rework.</li>
-    <li><strong>Same model for all arms.</strong> Opus 4.7. A weaker model would likely show larger deltas; a stronger model would show smaller ones.</li>
-    <li><strong>The skill's own output is being measured against itself's premise.</strong> The skill was authored with this exact hypothesis in mind. The experiment falsifies or supports the premise; it does not prove the skill is optimal at producing the docs it produces.</li>
+    <li><strong>We measured a single skill pass on Arm B.</strong> A different stochastic pass of the skill might produce different docs and different results — though the skill's output is constrained enough by SKILL.md that we expect comparable behavior.</li>
+    <li><strong>The Sonnet finding leans on the C arm.</strong> The strongest claim — "good docs help less-capable agents" — rests on Arm C. The B arm contradicts it for skill-generated docs specifically.</li>
   </ul>
 </div>
 
 <h2>Reproduction</h2>
-<p>This experiment is reproducible from any fork of the fixture repo. The harness, strip script, and parse/report
-scripts are committed to the doc-comments skill repo at
-<code>experiments/where-can-i-watch-ios/</code>. To re-run:</p>
-<pre style="background:#fafafa;padding:12px;font-size:12px;">git clone https://github.com/tommcfarlin/where-can-i-watch-ios.git
-cd where-can-i-watch-ios
-# Set up three worktrees per arm, apply strip script to Arm A & B,
-# run /doc-comments on Arm B, then:
-./run-experiment.sh
-python3 parse-runs.py
-python3 build-report.py</pre>
+<p>All raw stream-json output, scripts, and arm states are committed alongside this report.
+The methodology is reproducible on any codebase. See
+<a href="README.md"><code>evaluation/README.md</code></a> for step-by-step instructions.</p>
 
 <p class="meta" style="margin-top:48px;border-top:1px solid var(--border);padding-top:12px;">
 Generated by <code>build-report.py</code>. Self-contained HTML; no external resources.

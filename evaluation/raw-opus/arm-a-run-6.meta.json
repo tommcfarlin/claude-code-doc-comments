@@ -1,0 +1,11 @@
+{
+  "arm": "a",
+  "run": 6,
+  "dir": "/Users/tommcfarlin/Projects/02-tm/doc-comments-experiment/arm-a-stripped",
+  "duration_seconds": 62,
+  "exit_code": 0,
+  "prompt_hash": "a8208e04692fbadd2b25150394e64382ac2754cb78144a7798dd548d69ce7d75",
+  "model": "opus",
+  "started_at": 1778852458,
+  "ended_at": 1778852520
+}
