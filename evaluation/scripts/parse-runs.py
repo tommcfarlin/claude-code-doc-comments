@@ -2,20 +2,8 @@
 """
 Parse stream-json output from each measurement run and extract metrics.
 
-For each run, computes:
-  - input_tokens_total: sum of input tokens across all assistant turns
-  - input_tokens_to_first_edit: sum up to and including the turn with the
-    first Edit/Write/NotebookEdit tool call
-  - output_tokens_total
-  - discovery_calls_before_first_edit: count of Read/Grep/Glob/Bash tool uses
-    that occurred before any Edit/Write/NotebookEdit
-  - tool_use_counts: per-tool counts
-  - first_edit_turn_index: turn number where the first edit occurred
-  - made_an_edit: whether any edit happened at all
-  - duration_seconds: from meta file
-  - exit_code
-
-Writes results/metrics.json with one entry per run.
+Scans evaluation/raw-opus/ and evaluation/raw-sonnet/ (whichever exist),
+tags each run with its model, writes combined metrics to evaluation/metrics.json.
 """
 
 import json
@@ -24,11 +12,17 @@ from pathlib import Path
 EDIT_TOOLS = {"Edit", "Write", "NotebookEdit", "MultiEdit"}
 DISCOVERY_TOOLS = {"Read", "Grep", "Glob", "Bash"}
 
-RESULTS_DIR = Path("/Users/tommcfarlin/Projects/02-tm/doc-comments-experiment/results")
-RAW_DIR = RESULTS_DIR / "raw"
+SCRIPT_DIR = Path(__file__).resolve().parent
+EVAL_DIR = SCRIPT_DIR.parent  # evaluation/
+METRICS_FILE = EVAL_DIR / "metrics.json"
+
+MODEL_DIRS = {
+    "opus": EVAL_DIR / "raw-opus",
+    "sonnet": EVAL_DIR / "raw-sonnet",
+}
 
 
-def parse_run(jsonl_path: Path, meta_path: Path) -> dict:
+def parse_run(jsonl_path: Path, meta_path: Path, model: str) -> dict:
     meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
 
     input_tokens_total = 0
@@ -50,16 +44,14 @@ def parse_run(jsonl_path: Path, meta_path: Path) -> dict:
             except json.JSONDecodeError:
                 continue
 
-            # The Claude Code stream-json format emits events with `type`
-            # describing event kind. Assistant messages with content blocks
-            # and usage info are the key signal.
             etype = event.get("type")
-
             if etype == "assistant":
                 turn_index += 1
                 msg = event.get("message", {})
                 usage = msg.get("usage", {}) or {}
-                in_t = (usage.get("input_tokens") or 0) + (usage.get("cache_read_input_tokens") or 0) + (usage.get("cache_creation_input_tokens") or 0)
+                in_t = (usage.get("input_tokens") or 0) \
+                     + (usage.get("cache_read_input_tokens") or 0) \
+                     + (usage.get("cache_creation_input_tokens") or 0)
                 out_t = usage.get("output_tokens") or 0
                 input_tokens_total += in_t
                 output_tokens_total += out_t
@@ -80,10 +72,10 @@ def parse_run(jsonl_path: Path, meta_path: Path) -> dict:
                     input_tokens_to_first_edit = input_tokens_total
 
     if not edit_seen:
-        # If the agent never edited, treat the full run as "discovery"
         input_tokens_to_first_edit = input_tokens_total
 
     return {
+        "model": model,
         **meta,
         "input_tokens_total": input_tokens_total,
         "input_tokens_to_first_edit": input_tokens_to_first_edit,
@@ -98,30 +90,29 @@ def parse_run(jsonl_path: Path, meta_path: Path) -> dict:
 
 def main():
     results = []
-    for jsonl in sorted(RAW_DIR.glob("arm-*-run-*.jsonl")):
-        meta = jsonl.with_suffix(".meta.json").with_name(jsonl.stem + ".meta.json")
-        # The above is messy because .jsonl has a single suffix. Fix:
-        meta = jsonl.parent / (jsonl.stem + ".meta.json")
-        try:
-            r = parse_run(jsonl, meta)
-        except Exception as e:
-            r = {"file": str(jsonl), "parse_error": str(e)}
-        results.append(r)
+    for model, raw_dir in MODEL_DIRS.items():
+        if not raw_dir.exists():
+            continue
+        for jsonl in sorted(raw_dir.glob("arm-*-run-*.jsonl")):
+            meta = jsonl.parent / (jsonl.stem + ".meta.json")
+            try:
+                r = parse_run(jsonl, meta, model)
+            except Exception as e:
+                r = {"model": model, "file": str(jsonl), "parse_error": str(e)}
+            results.append(r)
 
-    out = RESULTS_DIR / "metrics.json"
-    out.write_text(json.dumps(results, indent=2))
-    print(f"Wrote {out} ({len(results)} runs)")
+    METRICS_FILE.write_text(json.dumps(results, indent=2))
+    models_seen = sorted({r.get("model") for r in results})
+    print(f"Wrote {METRICS_FILE} ({len(results)} runs, models: {models_seen})")
 
-    # Console summary
-    print("\nPer-run summary:")
-    print(f"{'arm':<4} {'run':<4} {'in_total':>10} {'in_to_edit':>12} {'disc_pre':>9} {'edit?':>6} {'dur':>6}")
-    for r in results:
-        print(f"{r.get('arm','?'):<4} {str(r.get('run','?')):<4} "
-              f"{r.get('input_tokens_total',0):>10} "
-              f"{r.get('input_tokens_to_first_edit',0):>12} "
-              f"{r.get('discovery_calls_before_first_edit',0):>9} "
+    print(f"\n{'model':<8} {'arm':<4} {'run':<4} {'in_total':>11} {'in_to_edit':>13} {'disc':>5} {'edit?':>6} {'dur':>6}")
+    for r in sorted(results, key=lambda x: (x.get("model", ""), x.get("arm", ""), x.get("run", 0))):
+        print(f"{r.get('model','?'):<8} {r.get('arm','?'):<4} {str(r.get('run','?')):<4} "
+              f"{r.get('input_tokens_total',0):>11,} "
+              f"{r.get('input_tokens_to_first_edit',0):>13,} "
+              f"{r.get('discovery_calls_before_first_edit',0):>5} "
               f"{str(r.get('made_an_edit','?')):>6} "
-              f"{r.get('duration_seconds','?')!s:>6}")
+              f"{str(r.get('duration_seconds','?')):>5}s")
 
 
 if __name__ == "__main__":

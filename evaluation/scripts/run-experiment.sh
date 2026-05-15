@@ -16,7 +16,8 @@ EXPERIMENT_DIR="/Users/tommcfarlin/Projects/02-tm/doc-comments-experiment"
 RESULTS_DIR="$EXPERIMENT_DIR/results"
 PROMPT_FILE="$EXPERIMENT_DIR/task-prompt.txt"
 
-MODEL="opus"
+MODEL="${MODEL:-opus}"
+RAW_SUBDIR="${RAW_SUBDIR:-raw}"
 TIMEOUT_MIN=20
 
 arm_dir() {
@@ -28,7 +29,7 @@ arm_dir() {
   esac
 }
 
-mkdir -p "$RESULTS_DIR/raw"
+mkdir -p "$RESULTS_DIR/$RAW_SUBDIR"
 
 PROMPT=$(cat "$PROMPT_FILE")
 PROMPT_HASH=$(shasum -a 256 "$PROMPT_FILE" | cut -d' ' -f1)
@@ -47,8 +48,8 @@ run_one() {
   local run="$2"
   local dir
   dir=$(arm_dir "$arm")
-  local out="$RESULTS_DIR/raw/arm-${arm}-run-${run}.jsonl"
-  local meta="$RESULTS_DIR/raw/arm-${arm}-run-${run}.meta.json"
+  local out="$RESULTS_DIR/$RAW_SUBDIR/arm-${arm}-run-${run}.jsonl"
+  local meta="$RESULTS_DIR/$RAW_SUBDIR/arm-${arm}-run-${run}.meta.json"
 
   echo "=== arm=$arm run=$run ==="
   echo "  dir: $dir"
