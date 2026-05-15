@@ -7,7 +7,6 @@ The full evaluation lives in [`evaluation/`](evaluation/).
 - **Pre-registration:** [`evaluation/preregistration-sonnet.md`](evaluation/preregistration-sonnet.md) (committed before Sonnet data existed)
 - **Raw data:** [`evaluation/raw-opus/`](evaluation/raw-opus/), [`evaluation/raw-sonnet/`](evaluation/raw-sonnet/) — stream-json from all 60 measurement runs
 - **Scripts:** [`evaluation/scripts/`](evaluation/scripts/) — strip script, harness, parser, report builder
-- **Blog notes:** [`evaluation/blog-notes.md`](evaluation/blog-notes.md) — accumulating material for the eventual write-up
 
 ## Headline (N=10 per cell across both models)
 

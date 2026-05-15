@@ -29,7 +29,6 @@ evaluation/
 ├── preregistration-sonnet.md       — hypothesis filed before Sonnet runs
 ├── metrics.json                    — parsed per-run metrics, all 60 runs
 ├── task-prompt.txt                 — locked task prompt (SHA-256 verifiable)
-├── blog-notes.md                   — narrative notes for the eventual write-up
 ├── raw-opus/                       — stream-json from 30 Opus runs (N=10 × 3 arms)
 ├── raw-sonnet/                     — stream-json from 30 Sonnet runs (N=10 × 3 arms)
 └── scripts/
